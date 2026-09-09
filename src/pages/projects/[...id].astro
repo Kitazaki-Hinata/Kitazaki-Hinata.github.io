@@ -1,2 +1,18 @@
-<!-- Route: /projects/<id>/; IDs may contain nested folders. -->
-<!-- TODO: getStaticPaths for published projects, render body in ArticleLayout. -->
+---
+import { render, type CollectionEntry } from 'astro:content';
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { projectEntries, entryTitle, entrySummary } from '../../lib/content';
+export async function getStaticPaths() {
+  return (await projectEntries()).map((entry) => ({ params: { id: entry.id }, props: { entry } }));
+}
+interface Props { entry: CollectionEntry<'projects'> }
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+<ArticleLayout title={entryTitle(entry)} description={entrySummary(entry)} backHref="/projects/" backLabel="返回代码项目">
+  <div class="hero-links">
+    {entry.data.repo && <a href={entry.data.repo} target="_blank" rel="noopener noreferrer">GitHub 仓库 ↗</a>}
+    {entry.data.demo && <a href={entry.data.demo} target="_blank" rel="noopener noreferrer">在线演示 ↗</a>}
+  </div>
+  <Content />
+</ArticleLayout>

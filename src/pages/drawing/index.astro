@@ -1,2 +1,9 @@
-<!-- Route: /drawing/ -->
-<!-- TODO: BaseLayout, automatically scanned drawing gallery and ImageViewer. -->
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Gallery from '../../components/Gallery.astro';
+import { media } from '../../lib/media';
+---
+<BaseLayout title="绘画展示">
+  <header class="page-heading"><p class="eyebrow">SKETCHBOOK</p><h1>绘画展示</h1><p>一些光影、颜色和还没画完的想法。</p></header>
+  <Gallery images={media.drawing} />
+</BaseLayout>

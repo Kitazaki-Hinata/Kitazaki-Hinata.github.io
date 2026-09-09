@@ -1,1 +1,17 @@
-<!-- TODO: Stock article titles, dates, categories and summaries; link to /stock/<id>/. -->
+---
+import type { CollectionEntry } from 'astro:content';
+import { entryDate, entrySummary, entryTitle } from '../lib/content';
+import { withBase } from '../lib/urls';
+interface Props { entries: CollectionEntry<'stock'>[] }
+const { entries } = Astro.props;
+---
+<div class="article-list">
+  {entries.map((entry) => (
+    <article class="panel">
+      <div class="meta"><span>{entry.data.category}</span><span>{entryDate(entry) || '未注明日期'}</span></div>
+      <h2><a href={withBase('/stock/' + entry.id + '/')}>{entryTitle(entry)}</a></h2>
+      <p>{entrySummary(entry)}</p>
+    </article>
+  ))}
+  {!entries.length && <p class="panel empty">还没有发布记录。</p>}
+</div>

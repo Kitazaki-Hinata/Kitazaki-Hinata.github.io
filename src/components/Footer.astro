@@ -1,1 +1,7 @@
-<!-- TODO: Shared site footer and configured external links. -->
+---
+import { siteConfig } from '../config/site';
+---
+<footer class="site-footer">
+  <span>© {new Date().getFullYear()} {siteConfig.title}</span>
+  {siteConfig.social.map((link) => <a href={link.href} target="_blank" rel="noopener noreferrer">{link.label} ↗</a>)}
+</footer>

@@ -1,2 +1,12 @@
-<!-- Route: /404.html -->
-<!-- TODO: BaseLayout, page-not-found message and a link to the home page. -->
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../lib/urls';
+---
+<BaseLayout title="页面未找到">
+  <section class="hero">
+    <p class="eyebrow">404 / NOT FOUND</p>
+    <h1>这里还没有内容。</h1>
+    <p>这个地址可能已经改变，回主页继续逛逛吧。</p>
+    <a class="button" href={withBase('/')}>返回主页 →</a>
+  </section>
+</BaseLayout>

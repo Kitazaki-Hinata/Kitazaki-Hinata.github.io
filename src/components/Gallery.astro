@@ -1,2 +1,22 @@
-<!-- TODO: Responsive thumbnail gallery with intrinsic dimensions and lazy loading. -->
-<!-- Drawings open on click. Skin screenshots open on desktop double-click or mobile tap. -->
+---
+import { resourceUrl } from '../lib/urls';
+interface GalleryImage { src: string; title: string; alt: string; description?: string }
+interface Props { images: GalleryImage[] }
+const { images } = Astro.props;
+---
+{images.length ? (
+  <div class="gallery">
+    {images.map((image) => (
+      <figure class="panel gallery-item">
+        <a href={resourceUrl(image.src)} target="_blank" rel="noopener noreferrer" aria-label={'查看原图：' + image.title}>
+          <img src={resourceUrl(image.src)} alt={image.alt} loading="lazy" />
+        </a>
+        <figcaption>
+          <h2>{image.title}</h2>
+          {image.description && <p>{image.description}</p>}
+          <a href={resourceUrl(image.src)} target="_blank" rel="noopener noreferrer">查看原图 ↗</a>
+        </figcaption>
+      </figure>
+    ))}
+  </div>
+) : <p class="panel empty">这里还没有图片，之后再来看看。</p>}

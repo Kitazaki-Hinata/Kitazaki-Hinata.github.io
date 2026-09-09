@@ -1,3 +1,10 @@
-<!-- Route: /osu/ -->
-<!-- TODO: BaseLayout and sorted SkinCard list from generated media metadata. -->
-<!-- Each title and cover links to /osu_skin/<id>/. -->
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SkinCard from '../../components/SkinCard.astro';
+import { media } from '../../lib/media';
+---
+<BaseLayout title="osu skin">
+  <header class="page-heading"><p class="eyebrow">OSU! COLLECTION</p><h1>osu skin</h1><p>收集喜欢的配色、界面和打图手感。</p></header>
+  <div class="card-grid">{media.skins.map((skin) => <SkinCard skin={skin} />)}</div>
+  {!media.skins.length && <p class="panel empty">还没有发布 skin。</p>}
+</BaseLayout>

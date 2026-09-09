@@ -1,1 +1,16 @@
-<!-- TODO: Wrap article content in BaseLayout; show title, date, tags and a return link. -->
+---
+import BaseLayout from './BaseLayout.astro';
+import { withBase } from '../lib/urls';
+interface Props { title: string; description?: string; date?: string; backHref: string; backLabel: string }
+const { title, description, date, backHref, backLabel } = Astro.props;
+---
+<BaseLayout title={title} description={description}>
+  <a class="back-link" href={withBase(backHref)}>← {backLabel}</a>
+  <article class="panel prose">
+    <header class="page-heading">
+      <h1>{title}</h1>
+      {date && <time datetime={date}>{date}</time>}
+    </header>
+    <slot />
+  </article>
+</BaseLayout>

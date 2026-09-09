@@ -1,1 +1,17 @@
-<!-- TODO: Project cover, title, summary and tags; link to /projects/<id>/. -->
+---
+import type { CollectionEntry } from 'astro:content';
+import { entrySummary, entryTitle } from '../lib/content';
+import { resourceUrl, withBase } from '../lib/urls';
+interface Props { entry: CollectionEntry<'projects'> }
+const { entry } = Astro.props;
+const href = withBase('/projects/' + entry.id + '/');
+---
+<article class="panel card">
+  {entry.data.cover && <a href={href}><img src={resourceUrl(entry.data.cover)} alt={entryTitle(entry)} loading="lazy" /></a>}
+  <div class="card-body">
+    <div class="tags">{entry.data.tags.map((tag) => <span>{tag}</span>)}</div>
+    <h2><a href={href}>{entryTitle(entry)}</a></h2>
+    <p>{entrySummary(entry)}</p>
+    <a href={href}>查看项目 →</a>
+  </div>
+</article>

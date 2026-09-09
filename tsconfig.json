@@ -1,11 +1,5 @@
 {
-  "compilerOptions": {
-    "strict": true,
-    "noEmit": true,
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Bundler"
-  },
-  "include": ["src/**/*"],
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
   "exclude": ["node_modules", "dist"]
 }

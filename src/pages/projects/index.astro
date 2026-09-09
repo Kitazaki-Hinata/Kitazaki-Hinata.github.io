@@ -1,2 +1,11 @@
-<!-- Route: /projects/ -->
-<!-- TODO: BaseLayout and sorted ProjectCard list from the projects collection. -->
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import { projectEntries } from '../../lib/content';
+const entries = await projectEntries();
+---
+<BaseLayout title="代码项目">
+  <header class="page-heading"><p class="eyebrow">PROJECTS</p><h1>代码项目</h1><p>把想法写成可以运行的东西。</p></header>
+  <div class="card-grid">{entries.map((entry) => <ProjectCard entry={entry} />)}</div>
+  {!entries.length && <p class="panel empty">项目正在整理中。</p>}
+</BaseLayout>

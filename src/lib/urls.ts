@@ -1,4 +1,9 @@
-// TODO: Resolve route and media URLs using the configured deployment base.
-// Normalize Windows separators, encode path segments and validate local references.
-// Resolve Markdown images relative to the source file or resource/ convention.
-export {};
+export function withBase(value: string): string {
+  const prefix = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const encoded = value.replace(/\\/g, '/').split('/').filter(Boolean).map(encodeURIComponent).join('/');
+  return prefix + '/' + encoded + (encoded && value.endsWith('/') ? '/' : '');
+}
+
+export function resourceUrl(value: string): string {
+  return withBase('resource/' + value.replace(/^\/+/, ''));
+}

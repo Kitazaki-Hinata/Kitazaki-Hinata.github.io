@@ -3,8 +3,22 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Personal blog scaffold for GitHub Pages; implementation pending.",
-  "scripts": {},
-  "dependencies": {},
-  "devDependencies": {}
+  "description": "A static personal blog built with Astro for GitHub Pages.",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "prepare:media": "node scripts/prepare-media.mjs",
+    "dev": "npm run prepare:media && astro dev",
+    "check": "npm run prepare:media && astro check",
+    "build": "npm run prepare:media && astro build",
+    "preview": "astro preview"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@astrojs/markdown-remark": "7.3.1",
+    "@types/node": "24.13.3",
+    "astro": "7.3.2",
+    "typescript": "6.0.3"
+  }
 }

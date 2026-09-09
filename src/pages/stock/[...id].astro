@@ -1,2 +1,14 @@
-<!-- Route: /stock/<id>/; IDs may contain nested folders. -->
-<!-- TODO: getStaticPaths for published Markdown entries, render body in ArticleLayout. -->
+---
+import { render, type CollectionEntry } from 'astro:content';
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { stockEntries, entryTitle, entryDate, entrySummary } from '../../lib/content';
+export async function getStaticPaths() {
+  return (await stockEntries()).map((entry) => ({ params: { id: entry.id }, props: { entry } }));
+}
+interface Props { entry: CollectionEntry<'stock'> }
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+<ArticleLayout title={entryTitle(entry)} description={entrySummary(entry)} date={entryDate(entry)} backHref="/stock/" backLabel="返回记录列表">
+  <Content />
+</ArticleLayout>

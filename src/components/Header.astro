@@ -1,1 +1,18 @@
-<!-- TODO: Shared navigation from siteConfig; current-route state and mobile menu. -->
+---
+import { siteConfig } from '../config/site';
+import { withBase } from '../lib/urls';
+const current = Astro.url.pathname;
+const active = (href: string) => {
+  const url = withBase(href);
+  return href === '/' ? current === url
+    : current.startsWith(url) || (href === '/osu/' && current.startsWith(withBase('/osu_skin/')));
+};
+---
+<header class="site-header">
+  <a class="brand" href={withBase('/')}>{siteConfig.title}<span> / JOURNAL</span></a>
+  <nav aria-label="主导航">
+    {siteConfig.navigation.map((item) =>
+      <a href={withBase(item.href)} aria-current={active(item.href) ? 'page' : undefined}>{item.label}</a>
+    )}
+  </nav>
+</header>

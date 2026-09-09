@@ -1,2 +1,25 @@
-<!-- Route: / -->
-<!-- TODO: BaseLayout, full-height introduction and resource/about.md below the first screen. -->
+---
+import { getEntry, render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { siteConfig } from '../config/site';
+import { resourceUrl, withBase } from '../lib/urls';
+const about = await getEntry('about', 'about');
+const rendered = about ? await render(about) : undefined;
+const About = rendered?.Content;
+---
+<BaseLayout>
+  <section class="hero">
+    <p class="eyebrow">PERSONAL SPACE</p>
+    <h1>{siteConfig.title}</h1>
+    <p class="hero-description">{siteConfig.description}</p>
+    <div class="hero-links">
+      <a class="button" href="#about">认识一下 ↓</a>
+      <a class="text-link" href={withBase('/osu/')}>浏览 osu skin →</a>
+    </div>
+    <span class="hero-note">把喜欢的东西，慢慢留在这里。</span>
+  </section>
+  <section id="about" class="panel about-section">
+    <img class="avatar" src={resourceUrl(siteConfig.avatar)} alt={siteConfig.title + ' 的头像'} width="120" height="120" />
+    <div class="prose">{About ? <About /> : <p>自我介绍正在整理中。</p>}</div>
+  </section>
+</BaseLayout>

@@ -1,4 +1,20 @@
-<!-- Route: /osu_skin/<id>/ -->
-<!-- TODO: getStaticPaths for each published skin folder ID. -->
-<!-- TODO: BaseLayout, skin title/description/download, screenshot gallery and ImageViewer. -->
-<!-- Desktop: double-click opens the original; mobile: tap; keyboard: Enter. -->
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Gallery from '../../components/Gallery.astro';
+import { withBase } from '../../lib/urls';
+import { media } from '../../lib/media';
+export function getStaticPaths() {
+  return media.skins.map((skin) => ({ params: { id: skin.id }, props: { skin } }));
+}
+interface Props { skin: (typeof media.skins)[number] }
+const { skin } = Astro.props;
+---
+<BaseLayout title={skin.title} description={skin.description}>
+  <a class="back-link" href={withBase('/osu/')}>← 返回 osu skin</a>
+  <header class="page-heading">
+    <p class="eyebrow">SKIN PREVIEW</p><h1>{skin.title}</h1><p>{skin.description}</p>
+    <div class="meta">{skin.author && <span>{skin.author}</span>}{skin.date && <time datetime={skin.date}>{skin.date}</time>}</div>
+    {skin.download && <a class="button" href={skin.download} target="_blank" rel="noopener noreferrer">下载 skin ↗</a>}
+  </header>
+  <Gallery images={skin.images} />
+</BaseLayout>
