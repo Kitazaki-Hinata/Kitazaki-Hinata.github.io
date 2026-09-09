@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title">
+  <title id="title">Example skin gameplay screenshot placeholder</title>
+  <rect width="1280" height="720" fill="#19263b"/>
+  <path d="M340 470L650 280L960 450" fill="none" stroke="#849dc5" stroke-width="8" opacity=".5"/>
+  <g fill="#635786" stroke="#c7c0ed" stroke-width="10">
+    <circle cx="340" cy="470" r="76"/>
+    <circle cx="650" cy="280" r="76"/>
+    <circle cx="960" cy="450" r="76"/>
+  </g>
+  <g fill="#fff" font-family="sans-serif" font-size="48" text-anchor="middle">
+    <text x="340" y="487">1</text>
+    <text x="650" y="297">2</text>
+    <text x="960" y="467">3</text>
+  </g>
+  <text x="60" y="70" fill="#bac8e2" font-family="sans-serif" font-size="26">GAMEPLAY PLACEHOLDER / 02</text>
+</svg>

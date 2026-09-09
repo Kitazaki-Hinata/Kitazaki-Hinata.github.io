@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1100" viewBox="0 0 900 1100" role="img" aria-labelledby="title">
+  <title id="title">Example drawing: sunset and mountains</title>
+  <rect width="900" height="1100" fill="#605078"/>
+  <circle cx="450" cy="430" r="180" fill="#edba9a"/>
+  <path d="M0 830L240 490L570 900L720 630L900 850V1100H0Z" fill="#35364f"/>
+  <path d="M0 1000L380 780L900 980V1100H0Z" fill="#202739"/>
+  <text x="60" y="90" fill="#fff0de" font-family="sans-serif" font-size="32">DRAWING EXAMPLE</text>
+</svg>

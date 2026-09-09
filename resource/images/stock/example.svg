@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-labelledby="title">
+  <title id="title">Illustrative chart without real market data</title>
+  <rect width="960" height="540" rx="20" fill="#19263b"/>
+  <path d="M90 110V440H880" fill="none" stroke="#7b8da9" stroke-width="3"/>
+  <path d="M110 380L240 320L370 355L510 210L650 270L820 160" fill="none" stroke="#a5c2cb" stroke-width="8"/>
+  <text x="90" y="70" fill="#dae3f2" font-family="sans-serif" font-size="28">EXAMPLE CHART - NO REAL DATA</text>
+</svg>

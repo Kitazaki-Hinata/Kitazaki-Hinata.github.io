@@ -1,289 +1,401 @@
-﻿# 个人博客架构设计
+# 个人博客：架构与文件维护指南
 
-本文是第一阶段架构方案，尚未实现页面、资源扫描脚本或部署工作流。
+本项目计划使用 Astro + TypeScript + CSS 构建静态个人博客，部署到 GitHub Pages。
 
-当前工作区的 Git 仓库位于 `Kitazaki-Hinata.github.io/`；下文目录及相对路径均以该仓库为项目根目录。本设计暂存于工作区现有的 README.md。
+**当前阶段：目录、文件骨架、示例资源和 GitHub Pages 工作流已创建。** 页面、内容扫描、缩略图生成和图片查看器尚未实现；`package.json` 仍未安装 Astro 或定义构建命令，因此还没有可运行的网站。工作流已经启用，但当前推送会在项目配置检查处报告缺失项，不会成功部署。
 
-## 1. 总体方案
+README 位于 Git 仓库根目录，下文路径均相对于此目录。现在可以整理和替换 `resource/` 中的内容；自动展示需要完成后续功能实现及部署后才会生效。
 
-采用 **Astro + TypeScript + CSS + 少量浏览器端 JavaScript**，构建静态页面，通过 GitHub Actions 发布到 GitHub Pages。
+## 1. 栏目与路由
 
-内容由本地文件维护：图片放入对应资源目录，文章使用 Markdown。所有页面复用一个布局，统一背景、导航、内容容器和页脚。第一阶段不做评论区、登录、数据库或后台编辑器。
-
-GitHub Pages 托管静态文件；本方案在构建时扫描资源目录，再生成列表及详情页。新增文件后，需要提交、推送并等待部署成功，线上内容才会更新。访问者的浏览器不直接枚举服务器目录。部署方式参考 [GitHub Pages 自定义工作流](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)。
-
-```mermaid
-flowchart TD
-    A["resource：图片和 Markdown"] --> B["构建时扫描、校验与整理"]
-    B --> C["图片清单与缩略图"]
-    B --> D["Markdown 内容集合"]
-    C --> E["Astro 页面 + 全站共用布局"]
-    D --> E
-    E --> F["dist：HTML / CSS / JS / 图片"]
-    F --> G["GitHub Actions"]
-    G --> H["GitHub Pages"]
-```
-
-## 2. 栏目与路由
-
-| 栏目 | 路由 | 内容来源 | 展示与交互 |
+| 栏目 | 地址 | 页面文件 | 内容来源 |
 | --- | --- | --- | --- |
-| 主页 | `/` | `resource/about.md` + 站点配置 | 首屏展示名字、简介和栏目入口，下滑进入自我介绍 |
-| osu skin | `/osu/` | `resource/osu_skin/` | 按 skin 分组展示预览图片，点击查看大图 |
-| 炒股记录与碎碎念 | `/stock/` | `resource/stock_text/**/*.md` | 显示标题、日期、分类和摘要，点击标题进入文章 |
-| 文章详情 | `/stock/<文章标识>/` | 对应 Markdown | 渲染正文，提供返回列表入口 |
-| 绘画展示 | `/drawing/` | `resource/drawing/` | 响应式画廊，点击查看原图，支持放大、缩小和拖动 |
-| 代码项目 | `/projects/` | `resource/projects/**/*.md` | 展示项目卡片、简介、技术标签和仓库链接 |
-| 项目详情 | `/projects/<项目标识>/` | 对应 Markdown | 展示项目介绍、截图及可选演示链接 |
+| 主页 | `/` | `src/pages/index.astro` | `resource/about.md` + 站点配置 |
+| osu skin 列表 | `/osu/` | `src/pages/osu/index.astro` | 每套 skin 的标题和封面 |
+| 单套 skin 详情 | `/osu_skin/<id>/` | `src/pages/osu_skin/[id].astro` | 对应 skin 的说明和全部预览图 |
+| 绘画展示 | `/drawing/` | `src/pages/drawing/index.astro` | `resource/drawing/` |
+| 炒股记录与碎碎念 | `/stock/` | `src/pages/stock/index.astro` | `resource/stock_text/**/*.md` |
+| 文章详情 | `/stock/<id>/` | `src/pages/stock/[...id].astro` | 对应 Markdown 正文 |
+| 代码项目 | `/projects/` | `src/pages/projects/index.astro` | `resource/projects/**/*.md` |
+| 项目详情 | `/projects/<id>/` | `src/pages/projects/[...id].astro` | 对应 Markdown 正文 |
 
-主页首屏使用接近一屏的高度，自我介绍紧接首屏；向下滚动或点击“关于我”锚点即可到达。移动端导航折叠，所有栏目保留清晰的返回入口。
+主页首屏展示名字、短简介及栏目入口，下滑进入自我介绍。全站导航在手机上折叠。暂不设计评论区。
 
-## 3. 计划目录结构
+osu skin 的文件夹只使用一级标识，因此详情模板命名为 `[id].astro`。文章和项目允许子文件夹，因此使用 `[...id].astro`。这些方括号是实际文件名的一部分，无需手动替换；后续由构建逻辑枚举内容并生成静态页面。参见 [Astro 路由文档](https://docs.astro.build/en/guides/routing/)。
 
-以下是待创建的结构，示例文件用于说明内容维护方式。
+## 2. 已创建的目录与文件
 
 ```text
 Kitazaki-Hinata.github.io/
 ├── .github/
-│   └── workflows/deploy.yml       # 构建并部署 GitHub Pages
-├── resource/                     # 人工维护的内容源
-│   ├── background/               # 全站背景图片专用目录
-│   │   └── main.webp
-│   ├── about.md                  # 主页自我介绍
-│   ├── drawing/                  # 自动扫描绘画图片，支持子目录
-│   │   ├── 2026-09-09-example.png
-│   │   └── 2026-09-09-example.json # 可选的同名作品说明
+│   └── workflows/deploy.yml             # main 推送触发检查、构建与 Pages 发布
+├── .gitignore
+├── README.md
+├── astro.config.mjs                    # 站点 URL、base、静态输出配置
+├── package.json                        # 项目元数据，暂未添加依赖和命令
+├── package-lock.json                   # 与当前空依赖清单一致的初始锁文件
+├── tsconfig.json
+├── resource/                           # 人工维护的内容源
+│   ├── about.md                        # 示例自我介绍
+│   ├── background/
+│   │   └── main.svg                    # 全站背景示例
+│   ├── drawing/
+│   │   ├── 2026-09-09-example.svg       # 示例绘画
+│   │   └── 2026-09-09-example.json      # 同名作品说明
 │   ├── osu_skin/
-│   │   └── my-skin/
-│   │       ├── skin.json         # 可选名称、说明、排序和下载链接
-│   │       ├── preview-01.png
-│   │       └── preview-02.png
+│   │   └── example-skin/               # 每套 skin 一个文件夹
+│   │       ├── skin.json               # 标题、封面、说明、排序
+│   │       └── images/                 # 只需维护原图
+│   │           ├── 01-cover.svg
+│   │           └── 02-gameplay.svg
 │   ├── stock_text/
-│   │   └── 2026-09-09-review.md
+│   │   └── 2026-09-09-example.md        # 示例文章
 │   ├── projects/
-│   │   └── blog.md
-│   └── images/                   # 文章插图、项目截图和头像
-│       └── stock/
-│           └── example.png
+│   │   └── example-blog.md             # 示例项目
+│   └── images/
+│       ├── avatar.svg
+│       ├── stock/example.svg           # 文章插图
+│       └── projects/example.svg        # 项目封面和截图
 ├── scripts/
-│   └── prepare-media.mjs         # 扫描图片、生成缩略图及媒体清单
+│   └── prepare-media.mjs               # 媒体扫描、缩略图、开发监听占位
 ├── src/
-│   ├── content.config.ts        # Markdown 集合、加载规则及字段校验
-│   ├── config/site.ts           # 名称、导航、背景路径、外部链接
-│   ├── generated/media.json     # 自动生成，不手动修改
+│   ├── content.config.ts               # Markdown 集合与字段校验占位
+│   ├── config/site.ts                  # 名称、背景、头像、导航、社交链接
+│   ├── generated/
+│   │   ├── .gitkeep                    # 提交到 Git，用于保留目录
+│   │   └── media.json                  # 本地空清单占位，已忽略
 │   ├── layouts/
-│   │   ├── BaseLayout.astro     # 所有页面共用的背景、导航和页脚
-│   │   └── ArticleLayout.astro  # 基于 BaseLayout 的文章排版
+│   │   ├── BaseLayout.astro
+│   │   └── ArticleLayout.astro
 │   ├── components/
 │   │   ├── Header.astro
 │   │   ├── Footer.astro
+│   │   ├── SkinCard.astro
 │   │   ├── Gallery.astro
 │   │   ├── ImageViewer.astro
 │   │   ├── ArticleList.astro
 │   │   └── ProjectCard.astro
 │   ├── lib/
-│   │   ├── content.ts          # 标题回退、排序、草稿过滤、路由标识
-│   │   └── urls.ts             # 统一处理部署基础路径和资源 URL
-│   ├── scripts/image-viewer.ts # 图片缩放、拖动、键盘和触摸交互
+│   │   ├── content.ts
+│   │   └── urls.ts
+│   ├── scripts/image-viewer.ts
 │   ├── styles/global.css
 │   └── pages/
 │       ├── index.astro
+│       ├── 404.astro
 │       ├── osu/index.astro
+│       ├── osu_skin/[id].astro
 │       ├── drawing/index.astro
 │       ├── stock/
 │       │   ├── index.astro
 │       │   └── [...id].astro
-│       ├── projects/
-│       │   ├── index.astro
-│       │   └── [...id].astro
-│       └── 404.astro
-├── public/
-│   ├── favicon.svg
-│   └── resource/               # 自动生成的公开图片及缩略图
-├── astro.config.mjs
-├── package.json
-├── package-lock.json
-└── .gitignore
+│       └── projects/
+│           ├── index.astro
+│           └── [...id].astro
+└── public/
+    ├── favicon.svg                     # 人工维护的网站图标
+    └── resource/
+        └── .gitkeep                    # 后续公开媒体的输出目录
 ```
 
-`resource/` 是唯一需要人工维护的内容目录。`public/resource/`、`src/generated/`、`dist/` 是生成产物，加入 Git 忽略规则；`public/` 中的 favicon 等人工文件正常提交。
+示例图片是真正可打开的 SVG 文件，可直接用浏览器预览，不是改了图片后缀的文本占位。它们仅用于说明文件关系，可以换成自己的 PNG、JPG 或 WebP；如果后缀或文件名改变，同时更新引用。
 
-## 4. 统一背景
+## 3. 全站统一背景与主页
 
-- 所有页面（包括文章详情、项目详情和 404）必须使用 `BaseLayout.astro`。
-- 背景图片统一放入 `resource/background/`，由 `src/config/site.ts` 指定当前使用的文件，例如 `background/main.webp`。
-- 背景目录可以存放多张备选图片，但全站只使用配置中选中的同一张，不按栏目切换。
-- 布局负责将背景路径转换为公开资源 URL，页面组件不单独配置背景。
-- 使用固定的全屏背景层，图片居中并以 `cover` 铺满；内容层添加统一遮罩和半透明卡片，保证文字可读。
-- 图片加载失败时回退到统一的纯色背景。
-- 更换背景时替换对应文件，或修改配置中的文件名，再提交部署即可。
+所有页面，包括文章、skin、项目详情和 404，都通过 `BaseLayout.astro` 使用同一个背景；`ArticleLayout.astro` 复用该布局。
 
-## 5. 绘画与 osu skin 图片
+背景原图放入 `resource/background/`。当前 `src/config/site.ts` 中的设置是：
 
-### 自动扫描
+```ts
+background: "background/main.svg"
+```
 
-`prepare-media.mjs` 在开发启动和正式构建前执行：
+此路径相对于 `resource/`，对应 `resource/background/main.svg`。可直接替换该图片；如果改用 `main.webp`，将配置同步改为 `background/main.webp`。目录可以存多张备选图，全站只使用配置选中的一张。
 
-1. 递归扫描 `resource/drawing/`、`resource/osu_skin/` 的 JPG、JPEG、PNG、WebP、AVIF、GIF 图片，扩展名大小写统一处理。
-2. 读取图片宽高及可选的同名 JSON 说明，生成 `src/generated/media.json`。
-3. 将图片复制到 `public/resource/` 的对应目录，并为画廊生成缩略图；背景和 `resource/images/` 中的插图也复制到对应公开目录。
-4. 媒体清单保存相对路径、缩略图路径、宽高、标题、说明、日期及分组；页面根据清单生成画廊。
-5. 不复制 Markdown 或 JSON 源文件；只发布页面实际需要的图片和静态页面。
+布局后续实现固定全屏背景层、居中覆盖、统一遮罩、半透明内容卡片及图片失败时的纯色回退。详情页不单独设置背景。
 
-扫描产物每次完整重建，避免源图片删除后仍出现在列表。清理范围仅限脚本专用的生成目录。开发模式监听资源新增、修改和删除，重新生成清单并刷新页面。
+自我介绍编辑 `resource/about.md`；站点名称、短简介、头像及社交链接编辑 `src/config/site.ts`。头像路径同样相对于 `resource/`。
 
-绘画只放图片也能展示：默认标题取文件名，日期优先取可选说明中的日期，其次取文件名开头的 `YYYY-MM-DD`。有日期的作品倒序排列，无日期的排在后面，同日期按相对路径排序；不依赖 Git 检出时会变化的文件修改时间。
+## 4. osu skin：列表、详情与图片
 
-可选的 `example.json` 对应 `example.png`：
+每套 skin 使用一个文件夹；复制现有的 `resource/osu_skin/example-skin/` 即可准备第二套。文件夹名称就是稳定的路由标识，例如：
+
+```text
+resource/osu_skin/white-cat/
+    → 列表：/osu/
+    → 详情：/osu_skin/white-cat/
+```
+
+文件夹名使用小写英文、数字和短横线，例如 `white-cat`、`hinata-blue`；标题可以是中文。发布后修改标题不影响链接，重命名文件夹会改变链接。
+
+### 标题、封面和原图放在哪里
+
+| 内容 | 维护位置 | 示例 |
+| --- | --- | --- |
+| skin 标题 | `skin.json` 的 `title` | `Example Skin · 蓝紫` |
+| 列表封面 | `skin.json` 的 `cover` | `images/01-cover.svg` |
+| 说明、日期和排序 | `skin.json` | `description`、`date`、`order` |
+| 封面原图与详情原图 | 该 skin 的 `images/` 目录 | `01-cover.svg`、`02-gameplay.svg` |
+| 封面及详情缩略图 | 后续由程序生成 | 不需要人工制作或提交 |
+
+当前 `skin.json` 示例：
 
 ```json
 {
-  "title": "夏日练习",
+  "title": "Example Skin · 蓝紫",
+  "cover": "images/01-cover.svg",
+  "description": "示例 skin：展示封面和多张预览图的目录组织方式。",
   "date": "2026-09-09",
-  "description": "一次光影练习",
-  "alt": "树荫下的人物插画"
+  "author": "Kitazaki Hinata",
+  "order": 1,
+  "draft": false
 }
 ```
 
-osu skin 每个子目录代表一套 skin，目录内可放多张预览图；没有 `skin.json` 时使用目录名作为标题。直接放在 `osu_skin/` 下的图片归入默认分组。下载链接为可选项，不影响图片展示。
+`cover` 相对于这一套 skin 的文件夹，必须指向其 `images/` 中的一张图片。封面只决定列表使用哪张图，不改变详情图片顺序；封面图片也包含在详情画廊中。
 
-### 图片查看器
+| 字段 | 规则 |
+| --- | --- |
+| `title` | 建议填写；省略时回退到文件夹名 |
+| `cover` | 建议明确填写；省略时取排序后的第一张图片，填写但文件不存在时报告错误 |
+| `description` | 可选，省略时隐藏说明 |
+| `date` | 可选，格式为 `YYYY-MM-DD` |
+| `author` | 可选，省略时隐藏作者 |
+| `download` | 可选，填写真实下载地址；省略时隐藏下载按钮 |
+| `order` | 可选数字，越小越靠前，未填写的排在有 order 的后面 |
+| `draft` | 可选，默认 false；true 时不生成卡片、详情页及该 skin 的公开图片 |
 
-绘画和 osu skin 共用 `ImageViewer`：
+多个 skin 按 `order` 升序，再按 `date` 倒序（无日期的在后），最后按文件夹名称排序。详情图片按文件名进行自然排序，建议使用 `01-cover`、`02-gameplay`、`03-results` 等数字前缀。
 
-- 列表加载缩略图，保持原始宽高比，延迟加载屏幕外图片。
-- 点击后打开大图浮层，初始缩放为适应窗口。
-- 提供“放大”“缩小”“适应窗口”“关闭”按钮，缩放范围设为适应窗口比例的 1～5 倍。
-- 桌面端支持滚轮缩放、放大后拖动；移动端支持双指缩放和拖动。
-- 支持上一张、下一张，切换图片时重置缩放和位移。
-- 支持 Esc 关闭、方向键切换，打开时锁定页面滚动并限制焦点在浮层内，关闭后恢复焦点。
-- 浏览器端 JavaScript 不可用时，图片链接仍能打开原图。
+缺少 `skin.json` 时，计划采用上述默认值，仍以文件夹为一个 skin。图片应放在 `<id>/images/`；`osu_skin/` 根目录不直接放图片。配置路径错误、空图片目录、规范化后重名或无效 JSON 都应在构建时报告具体位置。
+
+### 预期浏览方式
+
+`/osu/` 展示多张 skin 卡片，每张只有标题、封面缩略图和可选简介。点击标题或封面进入 `/osu_skin/<id>/`，展示这套 skin 的全部图片缩略图。
+
+详情页在电脑上双击缩略图打开原图查看器，触屏设备单击打开，并提供键盘 Enter 操作。查看器支持放大、缩小、适应窗口、拖动、上一张、下一张和关闭；支持滚轮或双指缩放、Esc 关闭、焦点恢复及页面滚动锁定。绘画区使用同一个查看器，单击图片打开。
+
+这里区分三次操作：列表点击进入详情，详情双击打开原图，查看器内操作缩放。JavaScript 不可用时保留通向原图的普通链接。
+
+### 添加与更新
+
+1. 复制 `example-skin/`，改成新文件夹名。
+2. 替换 `images/` 内的示例图，可放任意多张预览原图。
+3. 修改 `skin.json` 的标题、封面、说明和排序。
+4. 删除不需要的示例图片；如果删除的是封面，同时更新 `cover`。
+5. 提交并推送。后续实现自动构建后，部署成功即可更新列表与详情。
+
+更改标题修改 `title`，更换封面修改 `cover`，增加截图放入 `images/`，暂时隐藏设置 `draft: true`。可用同名文件替换旧原图；生成资源应包含内容哈希或版本标识，使更换后不会继续显示缓存的旧图。
+
+## 5. 绘画、文章插图与代码项目
+
+绘画放入 `resource/drawing/`，支持子文件夹。已有一张示例 SVG，以及同目录、同名的 JSON：
+
+```json
+{
+  "title": "示例绘画：落日",
+  "date": "2026-09-09",
+  "description": "用于演示绘画文件与同名说明文件的对应关系，可替换为自己的作品。",
+  "alt": "紫色天空下的落日与山形"
+}
+```
+
+只放图片也应能展示；JSON 为可选。标题默认取文件名，日期优先取 JSON，其次解析文件名开头的 `YYYY-MM-DD`。有日期的作品倒序排列，无日期的在后，同日期按相对路径排序，不使用 Git 检出时会变化的文件修改时间。同目录应避免仅扩展名不同的同名图片，以免说明文件产生歧义。
+
+头像、文章插图和项目截图放入 `resource/images/`。现有 `stock/`、`projects/` 子目录各有示例图片。
+
+每个代码项目使用一份 `resource/projects/**/*.md`，可复制 `example-blog.md`。支持 `title`、`description`、`tags`、`repo`、`demo`、`cover`、`order`、`draft`；缺少仓库、演示地址或封面时，隐藏相应入口。项目 `cover` 相对于 `resource/`，例如 `images/projects/example.svg`。项目按 order 升序、标识排序，未指定 order 的在后。
 
 ## 6. 炒股记录与碎碎念
 
-### Markdown → 列表 → 详情页
-
-使用 Astro 内容集合，在构建时通过 `glob()` 读取 `resource/stock_text/**/*.md`。列表读取集合元数据，详情路由通过 `getStaticPaths()` 枚举文章，并使用 `render()` 渲染正文。相关能力见 [Astro 内容集合文档](https://docs.astro.build/en/guides/content-collections/)。
-
-```text
-resource/stock_text/2026-09-09-review.md
-    → /stock/ 中新增一个标题
-    → 点击进入 /stock/2026-09-09-review/
-    → 显示对应 Markdown 渲染后的正文
-```
-
-详情页生成真实 HTML，直接访问或刷新文章地址也能打开。新增文章无需手动修改列表或注册路由。
-
-### 推荐写法
+在 `resource/stock_text/` 新建 Markdown，例如现有的 `2026-09-09-example.md`：
 
 ```markdown
 ---
-title: "今日复盘：耐心等待机会"
+title: "示例：今日复盘与碎碎念"
 date: "2026-09-09"
 category: "炒股记录"
-tags: ["复盘", "交易心态"]
-description: "今天的观察与操作总结。"
+tags: ["示例", "复盘"]
+description: "演示标题、日期、分类、摘要及正文插图的写法。"
 draft: false
 ---
 
-## 今日观察
+# 今日复盘与碎碎念
 
-这里写正文。
+在这里写正文。
 
-## 碎碎念
-
-也可以记录与交易无关的日常想法。
+![示例插图](../images/stock/example.svg)
 ```
 
-字段及回退规则：
+后续构建时读取所有 Markdown，`/stock/` 自动列出标题，点击进入对应静态文章页：
 
-| 字段 | 是否必填 | 规则 |
-| --- | --- | --- |
-| `title` | 否 | 优先使用该字段，否则取正文第一个一级标题，最后回退到文件名 |
-| `date` | 否 | 优先使用该字段，否则解析文件名开头日期；仍无日期时显示“未注明日期” |
-| `category` | 否 | 建议使用“炒股记录”或“碎碎念”；缺省为“碎碎念” |
-| `tags` | 否 | 缺省为空数组 |
-| `description` | 否 | 缺省从正文提取一小段纯文本摘要 |
-| `draft` | 否 | 缺省为 false；true 时不生成列表条目和详情页 |
-
-完全没有 YAML 头部的普通 Markdown 也必须能展示。元数据字段可选；显式提供但格式错误的日期或字段类型应报出文件名并阻止部署，便于修正。
-
-列表默认按日期倒序，有日期的在前，无日期的在后；同日期按文章标识排序。分类可用于筛选“全部 / 炒股记录 / 碎碎念”。
-
-文章标识由相对路径去掉 `.md` 后规范化生成，保留子目录层级，例如 `2026/review.md` 对应 `/stock/2026/review/`。构建时检测规范化后重名；重命名文件会改变文章链接，因此发布后尽量保持文件路径稳定。
-
-插图放入 `resource/images/`。Markdown 中使用 `![说明](resource/images/stock/example.png)` 作为项目约定，渲染阶段统一转换成带站点基础路径的 URL；常规相对路径图片应通过同一处理器解析和校验，避免从文章 URL 错误寻找文件。
-
-## 7. 代码项目与自我介绍
-
-项目使用 `resource/projects/*.md`，复用文章读取和详情页生成机制。每个文件对应一张项目卡片和一个详情页。
-
-```markdown
----
-title: "个人博客"
-description: "使用 GitHub Pages 展示作品与日常记录。"
-tags: ["Astro", "TypeScript"]
-repo: "https://github.com/Kitazaki-Hinata/Kitazaki-Hinata.github.io"
-order: 1
-draft: false
----
-
-## 项目介绍
-
-这里描述功能、实现思路及截图。
+```text
+resource/stock_text/2026-09-09-example.md
+    → /stock/ 的标题列表
+    → /stock/2026-09-09-example/
 ```
 
-项目可增加 `demo` 演示地址和 `cover` 封面图片字段；缺少时隐藏对应按钮或封面。按 `order` 升序排列，未指定的排在后面，再按项目标识排序。标题回退和草稿规则与股票文章一致。
+元数据全部可选，没有 YAML 头部的 Markdown 也要能展示：
 
-`resource/about.md` 维护自我介绍正文。头像、姓名、短简介和社交链接放在站点配置中；不设置的社交链接不显示。
-
-## 8. 构建与发布
-
-计划提供以下命令，当前尚未实现：
-
-| 命令 | 用途 |
+| 字段 | 默认或回退规则 |
 | --- | --- |
-| `npm run dev` | 准备图片清单、启动资源监听与 Astro 本地开发 |
-| `npm run check` | 检查类型、内容字段、文件引用及重复路由 |
-| `npm run build` | 准备媒体资源并生成完整静态站点到 dist |
-| `npm run preview` | 预览已构建的 dist |
+| `title` | 正文第一个一级标题，再回退到文件名 |
+| `date` | 文件名开头日期，仍缺少则显示“未注明日期” |
+| `category` | “碎碎念”；可选“炒股记录” |
+| `tags` | 空数组 |
+| `description` | 从正文提取纯文本摘要 |
+| `draft` | false；true 时不生成列表条目和详情页 |
 
-GitHub Actions 在推送到默认分支后执行：检出代码 → 配置与项目兼容的 Node.js → `npm ci` → `npm run check` → `npm run build` → 上传 `dist/` → 发布 GitHub Pages。提交锁文件确保依赖可复现；构建失败则不发布新版本。
+列表按日期倒序，无日期的在后，同日期按文章标识排序，并提供分类筛选。文章标识来自相对路径去掉扩展名，保留子目录，例如 `2026/review.md` 对应 `/stock/2026/review/`；重命名后网址会改变。构建时应检测路由冲突和无效字段并报告源文件。
 
-按当前仓库名称，计划使用 `https://kitazaki-hinata.github.io/`，Astro 的 `site` 指向该地址，`base` 为 `/`。若以后使用普通项目仓库部署到 `/<repo>/`，需调整 `base`；导航、图片和 Markdown 链接均通过统一的 URL 工具处理。具体配置依据 [Astro 的 GitHub Pages 部署指南](https://docs.astro.build/en/guides/deploy/github/)。
+正文插图优先使用相对于 Markdown 文件的路径，这样在编辑器中也能预览；上例使用 `../images/stock/example.svg`。嵌套目录中的文章需要相应增加 `../`。也可约定 `resource/images/...` 表示仓库根目录下的资源。后续由统一的链接处理器解析源文件位置、校验引用，再转为带站点 base 的公开 URL。
 
-所有本地文件路径可以由系统处理，但生成的网页 URL 统一使用 `/`，路径段正确编码；构建校验文件名大小写，避免 Windows 本地正常、线上找不到文件。
+文章和项目计划采用 Astro 构建时内容集合，通过 `glob()` 读取、`getStaticPaths()` 生成详情路由、`render()` 渲染正文，参考 [Astro 内容集合文档](https://docs.astro.build/en/guides/content-collections/)。
 
-## 9. 日常更新方式
+## 7. 资源扫描与生成产物约定
 
-| 想做的事 | 修改位置 | 部署后的结果 |
-| --- | --- | --- |
-| 更换全站背景 | 替换 `resource/background/main.webp` 或修改背景配置 | 所有栏目统一更新 |
-| 修改自我介绍 | 编辑 `resource/about.md` | 主页下方内容更新 |
-| 发布绘画 | 向 `resource/drawing/` 添加图片 | 自动加入画廊并支持缩放 |
-| 展示一套 skin | 向 `resource/osu_skin/<名称>/` 添加预览图 | 自动加入 osu 分组 |
-| 发布炒股记录或碎碎念 | 向 `resource/stock_text/` 添加 Markdown | 自动出现标题和独立文章页 |
-| 添加代码项目 | 向 `resource/projects/` 添加 Markdown | 自动出现项目卡片和详情页 |
-| 撤下内容 | 删除对应源文件，或将文章设为 `draft: true` | 下次部署移除相应列表和详情页 |
+`resource/` 是内容源，`public/resource/` 是程序生成的公开媒体目录。本项目统一使用这两个位置，不另设 `public/generated/`，避免维护两份输出。
 
-以上更新都需要提交并推送。草稿控制的是站点展示；如果仓库公开，提交到仓库的源文件仍然可被查看。
+后续 `prepare-media.mjs` 负责：
 
-## 10. 实施顺序与验收
+1. 扫描绘画和各套 skin 的图片，读取元数据和宽高。
+2. 校验封面、插图、重名文件及字段格式。
+3. 输出原图、缩略图和公开的背景／插图。
+4. 生成 `src/generated/media.json`，供 Astro 页面生成列表和详情。
+5. 在开发时监听新增、修改和删除；正式构建时重建专用输出目录，避免残留已删除资源。
 
-1. 建立 Astro 项目、配置、基础布局、统一背景及响应式导航。
-2. 实现主页首屏和下滑自我介绍。
-3. 实现股票 Markdown 集合、标题列表、文章详情和项目栏目。
-4. 实现图片扫描、绘画及 osu skin 画廊、图片查看器。
-5. 接入 GitHub Actions，完成线上验证。
+计划支持 JPG、JPEG、PNG、WebP、AVIF、GIF，以及仓库中自行维护的 SVG，扩展名大小写统一处理。普通位图生成 WebP 缩略图，GIF 可使用首帧缩略图并保留原动画，SVG 示例可直接复用为缩略图。列表按缩略图加载，打开查看器才加载原图；图片保留比例及宽高信息，屏幕外图片延迟加载。
 
-第一阶段验收标准：
+预期公开目录如下，尚未生成，文件名示例中的哈希由图片内容决定：
 
-- 五个栏目及所有详情页使用同一张背景。
-- 新增绘画图片后，无需编辑页面代码即可在下一次构建中展示。
-- 新增无元数据的 Markdown 也能显示标题、进入正文，直接刷新文章链接正常。
-- 同名图片位于不同子目录时可正常展示；删除文件后生成清单不残留。
-- 图片放大、缩小、拖动及移动端触摸操作正常，关闭浮层后页面恢复滚动。
-- 空栏目显示友好的占位内容，非法内容配置提供可定位的构建错误。
-- 用户站点根路径和项目站点子路径下的导航、图片及文章链接均正确。
+```text
+public/resource/
+├── .gitkeep
+├── background/main.<hash>.svg
+├── images/...
+├── drawing/
+│   ├── originals/...
+│   └── thumbnails/...
+└── osu_skin/
+    └── example-skin/
+        ├── originals/...
+        └── thumbnails/...
+```
+
+媒体清单保存原图／缩略图相对 URL、宽高、标题、说明、日期及 skin 标识；背景和插图的源文件与公开 URL 映射也由生成逻辑维护。页面通过清单定位图片，不自行拼接生成文件名。
+
+不直接公开 Markdown 和 JSON 源文件。原始内容只由构建工具读取；公开仓库中的源文件依然可以在 GitHub 查看，因此 `draft` 仅控制网站展示。
+
+当前 `src/generated/media.json` 仅为空清单占位，已被 Git 忽略。新的克隆只保留 `.gitkeep`；后续构建必须先生成清单，再加载页面。清理仅限专用生成目录，保留 `.gitkeep`，不能删除人工维护的 `resource/` 或 `public/favicon.svg`。
+
+## 8. Git 忽略规则
+
+当前 `.gitignore` 已覆盖：
+
+| 类型 | 忽略内容 |
+| --- | --- |
+| 依赖和缓存 | `node_modules/`、`.astro/`、`.cache/`、`.vite/`、`*.tsbuildinfo` |
+| 构建与检查结果 | `dist/`、`coverage/` |
+| 自动生成内容 | `src/generated/*`、`public/resource/*`，各自保留 `.gitkeep` |
+| 本地配置 | `.env`、`.env.*`、`*.local`，允许提交 `.env.example` |
+| 日志与临时文件 | `*.log`、`*.tmp`、`*.temp`、`*.swp`、`*.swo`、`*.bak`、`*~` |
+| IDE 与系统文件 | `.idea/`、`.vscode/`、`*.iml`、`.DS_Store`、`Thumbs.db`、`Desktop.ini` |
+
+图片、`.md`、`.json`、`.svg` 没有按后缀全局忽略；`resource/`、源码、`public/favicon.svg`、`package-lock.json` 和工作流应正常提交。现有 IDE 文件保留在本地。
+
+## 9. 开发与 GitHub Actions 部署
+
+### 当前还缺什么
+
+工作流位于 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)，已配置实际的检查、构建和发布步骤，但 YAML 不会自动实现网站。
+
+当前 `package.json` 的 scripts 和依赖为空，`package-lock.json` 只记录初始项目；页面与资源脚本仍是 TODO。**直接推送当前版本，会在 `Verify project setup` 步骤提示缺少 check、build 命令和 Astro 依赖，无法获得可测试的新站点。** 这属于项目尚未实现，不是 GitHub Pages 配置或 YAML 缩进错误。
+
+下一阶段需要安装兼容的 Astro、TypeScript、检查及图片处理依赖，由 npm 更新并提交锁文件，同时实现页面和以下命令：
+
+| 计划命令 | 职责与约束 |
+| --- | --- |
+| `npm run dev` | 准备资源、启动监听及本地开发服务器 |
+| `npm run check` | 准备检查所依赖的媒体清单，再检查类型、内容字段、引用路径及重复路由 |
+| `npm run build` | 准备资源，再生成完整静态网站到 `dist/` |
+| `npm run preview` | 预览已构建的 `dist/` |
+
+`check` 和 `build` 都应能在干净检出的仓库中执行，不能依赖未提交的 `src/generated/media.json`。需要的生成步骤放入各自的 npm 脚本或生命周期钩子中；不要用 `--if-present` 跳过缺失命令。动态详情页还需要实现 `getStaticPaths()`，仅安装依赖仍不足以构建当前占位文件。
+
+### 工作流如何运行
+
+工作流在推送到 `main` 时自动运行，也支持 Actions 页面手动运行；手动选择其他分支时会跳过，避免覆盖主站。工作目录是检出后的仓库根目录，**不要在 YAML 中再加本地外层 `HK-blog/` 或 `Kitazaki-Hinata.github.io/` 路径**。
+
+构建任务按以下顺序执行：
+
+1. 检出源码，设置 Node.js 24，按 `package-lock.json` 缓存 npm 下载内容。
+2. 检查 `package.json` 中的 check、build 命令及 Astro 依赖是否已配置。
+3. 执行 `npm ci`，按锁文件安装依赖。
+4. 配置 GitHub Pages，尽早发现 Pages 尚未启用等问题。
+5. 执行 `npm run check`，失败时停止。
+6. 执行 `npm run build`，失败时停止。
+7. 确认生成了非空的 `dist/index.html`。
+8. 将 `dist/` 上传为 Pages 构建产物。
+
+发布任务通过 `needs: build` 等待整个构建任务成功，再将产物发布到 `github-pages` 环境，输出访问网址。只有发布任务拥有 `pages: write` 和 `id-token: write` 权限；构建任务仅拥有仓库和 Pages 配置的读取权限。多个运行共用 `pages` 并发组，保留 `cancel-in-progress: false`，不打断正在进行的发布。
+
+工作流使用已核对的官方 Action：checkout v7、setup-node v7、configure-pages v5、upload-pages-artifact v4、deploy-pages v4。Node.js 24 用于项目构建，符合当前 Astro 的安装要求；本地也建议使用 Node.js 24。参考 [Astro 安装要求](https://docs.astro.build/en/install-and-setup/)、[setup-node 配置](https://github.com/actions/setup-node) 和 [GitHub Pages 自定义工作流](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)。
+
+### 首次发布与网址测试
+
+以下步骤应在网站具备构建条件后执行：
+
+1. 在仓库 `Settings → Pages → Build and deployment → Source` 中选择 **GitHub Actions**。本项目不需要手动创建 `gh-pages` 分支或个人访问令牌。
+2. 在仓库根目录运行下面的本地检查与构建命令，并打开 preview 输出的本地网址。
+3. 确认首页、背景、导航和详情路由正常；预览结束后使用 Ctrl+C 停止。
+4. 将源码、工作流、`package.json`、`package-lock.json`、README 和 `resource/` 示例一起提交，推送到 `main`。`dist/`、依赖及自动生成图片继续忽略。仅存在本地的未跟踪图片不会被 Actions 读取。
+5. 打开仓库 `Actions → Deploy Astro to GitHub Pages`，确认 Build Astro site 和 Deploy GitHub Pages 两个任务均成功。
+6. 从 `github-pages` 环境打开输出的网址，预期为 `https://kitazaki-hinata.github.io/`；再测试 `/osu/`、`/drawing/`、`/stock/`、`/projects/` 以及已实现的详情页，直接刷新详情地址也应正常。
+
+```sh
+npm ci
+npm run check
+npm run build
+npm run preview
+```
+
+以上命令当前会因项目尚未实现而失败，不能把它们当作已经验证可运行的步骤。Windows PowerShell 如果限制 `npm.ps1`，可以把命令里的 `npm` 换成 `npm.cmd`。
+
+`site` 已预留为 `https://kitazaki-hinata.github.io`，`base` 为 `/`，`output` 为 `static`；这个仓库使用用户站点地址，不要把仓库名再次加到 base 中。若以后改用普通项目仓库并部署到 `/<repo>/`，再修改 base，导航和图片 URL 由 `src/lib/urls.ts` 统一处理。参见 [Astro 的 GitHub Pages 部署指南](https://docs.astro.build/en/guides/deploy/github/)。
+
+### 常见失败位置
+
+| 失败位置或现象 | 重点检查 |
+| --- | --- |
+| 没有触发工作流 | 是否已将 `.github/workflows/deploy.yml` 提交并推送到 main，仓库是否允许 Actions |
+| Verify project setup | 是否已配置 Astro 依赖及 check、build 命令；当前骨架预期停在这里 |
+| npm ci | `package.json` 和锁文件是否匹配，是否提交了新的锁文件 |
+| Configure GitHub Pages | Pages 的 Source 是否设为 GitHub Actions |
+| Check project / Build Astro site | 查看第一条错误；确认媒体生成脚本、内容集合、动态路由及资源引用已经实现 |
+| Verify website output | 构建是否真的生成了 `dist/index.html`，Astro 输出目录是否被修改 |
+| Deploy GitHub Pages | `github-pages` 环境是否允许 main 部署，是否存在等待审核的环境规则 |
+| 部署成功但网址或图片 404 | 是否打开了正确网址，site/base 是否正确，图片是否已提交，路径大小写是否一致 |
+
+输出检查只确认首页文件存在且非空，不代表页面内容和所有交互已经正确。GitHub Pages 托管静态文件，新增内容需要提交、推送并等待重新构建部署；浏览器不直接枚举资源目录。网页 URL 统一使用 `/`，资源引用大小写必须与文件一致。
+
+## 10. 后续实现与验收
+
+1. 安装依赖并连接本地开发、检查与构建命令。
+2. 实现共享布局、统一背景、导航、主页和自我介绍。
+3. 实现 Markdown 集合、标题列表、文章及项目详情。
+4. 实现媒体扫描、skin 列表／详情、绘画画廊和图片查看器。
+5. 连接 GitHub Pages 发布流程并验证。
+
+验收要点：
+
+- 五个栏目及所有详情页、404 共用同一张背景。
+- 添加第二套 skin 后，列表出现独立标题和封面，点击进入各自详情。
+- 详情列出对应 images 中的所有图片，电脑双击和触屏单击可打开原图。
+- 图片缩放、拖动、切换、关闭与键盘操作正常。
+- 新增绘画或 Markdown 后，不修改页面代码即可在下一次构建展示。
+- 无元数据 Markdown 可显示标题并进入正文，刷新详情网址正常。
+- 删除内容不残留旧列表、详情及对应 skin 图片；草稿不进入公开页面。
+- 空栏目显示占位说明，错误配置报告具体文件，构建失败不发布新版本。
+- 根路径和项目子路径部署时，导航、图片及文章链接均正确。
 - 不提供评论区。
 

@@ -1,14 +1,100 @@
-# Deployment placeholder. Enable only after the site can build.
-# TODO: checkout -> npm ci -> check -> build -> upload dist -> deploy Pages.
-name: GitHub Pages (scaffold)
+name: Deploy Astro to GitHub Pages
+
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
+
+# Only the deploy job receives permission to publish the website.
 permissions:
   contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  deploy:
-    if: ${{ false }}
+  build:
+    name: Build Astro site
+    # Manual runs from other branches must not publish to the main site.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pages: read
+
     steps:
-      - name: Scaffold placeholder
-        run: echo "Deployment is not implemented yet."
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Verify project setup
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+          const problems = ['check', 'build']
+            .filter((name) => typeof pkg.scripts?.[name] !== 'string' || !pkg.scripts[name].trim())
+            .map((name) => 'Missing npm script: ' + name);
+          if (!pkg.dependencies?.astro && !pkg.devDependencies?.astro) {
+            problems.push('Astro is not installed. Complete the project setup described in README section 9.');
+          }
+          for (const problem of problems) console.error('::error file=package.json::' + problem);
+          if (problems.length) process.exit(1);
+          NODE
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Check project
+        run: npm run check
+
+      - name: Build Astro site
+        run: npm run build
+
+      - name: Verify website output
+        run: |
+          if [ ! -s dist/index.html ]; then
+            echo "::error::Build did not produce a non-empty dist/index.html."
+            exit 1
+          fi
+
+      - name: Upload website
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy GitHub Pages
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy website
+        id: deployment
+        uses: actions/deploy-pages@v4
