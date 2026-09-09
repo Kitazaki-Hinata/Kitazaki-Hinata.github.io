@@ -1,0 +1,14 @@
+# Deployment placeholder. Enable only after the site can build.
+# TODO: checkout -> npm ci -> check -> build -> upload dist -> deploy Pages.
+name: GitHub Pages (scaffold)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deploy:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scaffold placeholder
+        run: echo "Deployment is not implemented yet."

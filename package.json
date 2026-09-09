@@ -1,0 +1,10 @@
+{
+  "name": "kitazaki-hinata-blog",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Personal blog scaffold for GitHub Pages; implementation pending.",
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {}
+}
