@@ -1,0 +1,22 @@
+---
+import type { HappyPost } from '../lib/media';
+import Gallery from './Gallery.astro';
+interface Props { posts: HappyPost[] }
+const { posts } = Astro.props;
+---
+<div class="article-list">
+  {posts.map((post) => (
+    <article class="panel" id={'happy-' + post.id} data-happy-post={post.id}>
+      {post.title && <h2>{post.title}</h2>}
+      {post.date && <p class="meta"><time datetime={post.date}>{post.date}</time></p>}
+      <Gallery images={post.images} showCaptions={false} />
+      <p class="happy-text">{post.text}</p>
+    </article>
+  ))}
+  {!posts.length && <p class="panel empty">还没有记录快乐的事，之后再来看看。</p>}
+</div>
+<style>
+  article > h2 { margin-top: 0; }
+  article > .meta { margin-top: 0; margin-bottom: 1.25rem; }
+  .happy-text { white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: 0; line-height: 1.9; }
+</style>

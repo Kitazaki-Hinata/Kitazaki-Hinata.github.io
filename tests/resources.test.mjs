@@ -131,6 +131,59 @@ test('contact publishes exactly the selected images and rejects missing or outsi
   f.put('contact/config.json', JSON.stringify({ contact: { image: 'missing.png' }, support: { image: 'support.png' } }));
   await assert.rejects(f.run(), /missing image/);
 });
+test('happy posts group text and images, sort by date, preserve image order and exclude drafts', async (t) => {
+  const f = await fixture(t);
+  f.put('happy/2026-09-10-day/post.json', JSON.stringify({ text: 'A small joy.\nAnother line.' }));
+  f.put('happy/2026-09-10-day/images/10.png', f.png);
+  f.put('happy/2026-09-10-day/images/2.png', f.png);
+  f.put('happy/newer/post.json', JSON.stringify({ title: 'Newer', date: '2026-09-11', text: 'Two photos.', images: ['images/second.png', 'images/first.png'] }));
+  for (const name of ['first', 'second', 'unused']) f.put('happy/newer/images/' + name + '.png', f.png);
+  f.put('happy/draft/post.json', '{"draft":true}');
+  f.put('happy/draft/images/private.png', f.png);
+  const result = await f.run();
+  assert.deepEqual(result.happy.map((post) => post.id), ['newer', '2026-09-10-day']);
+  assert.deepEqual(result.happy[0].images.map((image) => image.source), ['happy/newer/images/second.png', 'happy/newer/images/first.png']);
+  assert.ok(result.happy[0].images.every((image) => image.thumbnail && image.width));
+  assert.deepEqual(result.happy[1].images.map((image) => path.basename(image.source)), ['2.png', '10.png']);
+  assert.equal(result.happy[1].title, '');
+  assert.equal(result.happy[1].date, '2026-09-10');
+  assert.equal(result.happy[1].text, 'A small joy.\nAnother line.');
+  assert.equal(result.assets['happy/newer/images/unused.png'], undefined);
+  assert.equal(result.assets['happy/draft/images/private.png'], undefined);
+});
+test('invalid happy posts retain previous output and cannot reference outside images', async (t) => {
+  const f = await fixture(t);
+  f.put('happy/moment/images/photo.png', f.png);
+  f.put('happy/moment/post.json', '{"text":"A joy"}');
+  await f.run();
+  const before = f.manifest();
+  for (const [data, message] of [
+    [{ text: ' ' }, /text must/],
+    [{ text: 'A joy', images: ['../../images/avatar.png'] }, /inside this post/],
+    [{ text: 'A joy', images: ['images/missing.png'] }, /missing image/],
+    [{ text: 'A joy', images: ['images/photo.png', 'images/./photo.png'] }, /duplicate images/],
+  ]) {
+    f.put('happy/moment/post.json', JSON.stringify(data));
+    await assert.rejects(f.run(), message);
+    assert.equal(f.manifest(), before);
+  }
+  f.put('happy/moment/post.json', '{"text":"A joy"}');
+  rmSync(path.join(f.root, 'resource/happy/moment/images/photo.png'));
+  await assert.rejects(f.run(), /has no images/);
+  assert.equal(f.manifest(), before);
+});
+test('removing a happy post removes its assets and leaves an empty feed', async (t) => {
+  const f = await fixture(t);
+  f.put('happy/moment/images/photo.png', await sharp(f.png).resize(117).toBuffer());
+  f.put('happy/moment/post.json', '{"text":"A joy"}');
+  const before = await f.run();
+  const asset = before.happy[0].images[0];
+  const folder = path.resolve(f.root, 'resource/happy/moment');
+  assert.ok(folder.startsWith(path.resolve(f.root, 'resource/happy') + path.sep));
+  rmSync(folder, { recursive: true });
+  assert.deepEqual((await f.run()).happy, []);
+  for (const name of [asset.src, ...asset.thumbnails.map((thumb) => thumb.src)]) assert.equal(existsSync(path.join(f.root, 'public/resource', name)), false);
+});
 test('resource URLs respect nesting, encoding and boundaries', () => {
   const root = path.join(projectRoot, 'resource');
   const file = path.join(root, 'stock_text/2026/note.md');

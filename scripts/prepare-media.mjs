@@ -89,6 +89,38 @@ export async function prepareProject({ root = projectRoot, site } = {}) {
       cover: relative(cover), images: files.map((file) => image(file)) });
   }
   skins.sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || compare(b.date, a.date) || compare(a.id, b.id));
+
+  const happy = [];
+  const happyRoot = path.join(sourceRoot, 'happy');
+  for (const folder of existsSync(happyRoot) ? readdirSync(happyRoot, { withFileTypes: true }) : []) {
+    if (!folder.isDirectory()) {
+      if (folder.name.endsWith('.json') || extensions.has(path.extname(folder.name).toLowerCase())) {
+        throw new Error('Place happy posts in <id>/post.json and <id>/images/: ' + folder.name);
+      }
+      continue;
+    }
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(folder.name)) throw new Error('Invalid happy post folder name: ' + folder.name);
+    const directory = path.join(happyRoot, folder.name);
+    const configFile = path.join(directory, 'post.json');
+    const data = json(configFile);
+    if (data.draft) continue;
+    if (typeof data.text !== 'string' || !data.text.trim()) throw new Error(configFile + ': text must contain a short description');
+    const available = images.filter((file) => file.startsWith(directory + path.sep + 'images' + path.sep));
+    let files = available;
+    if (data.images !== undefined) {
+      if (!Array.isArray(data.images) || !data.images.length || data.images.some((value) => typeof value !== 'string' || !value.trim() || value.includes('\\'))) {
+        throw new Error(configFile + ': images must be a non-empty array of paths relative to this post');
+      }
+      files = data.images.map((value) => path.resolve(directory, value));
+      if (files.some((file) => !available.includes(file))) throw new Error(configFile + ': missing image inside this post images/ directory (check case)');
+      if (new Set(files).size !== files.length) throw new Error(configFile + ': duplicate images');
+    }
+    if (!files.length) throw new Error(configFile + ': happy post has no images');
+    happy.push({ id: folder.name, title: data.title || '', date: data.date || fileDate(folder.name), text: data.text,
+      images: files.map((file, index) => image(file, { title: (data.title || '快乐的事') + ' · 图片 ' + (index + 1), alt: data.alt })) });
+  }
+  happy.sort((a, b) => compare(b.date, a.date) || compare(a.id, b.id));
+
   for (const file of images) if (/^(background|images)\//.test(relative(file))) selected.add(file);
   for (const value of [site.background, site.avatar]) {
     if (!selected.has(byName.get(value))) throw new Error('Configured image is missing (check case): ' + value);
@@ -143,7 +175,20 @@ export async function prepareProject({ root = projectRoot, site } = {}) {
   const previousFiles = walk(output);
   const stage = mkdtempSync(path.join(cache, 'media-stage-'));
   const assets = {};
+  const fonts = {};
   try {
+    // Publish only browser-ready font assets; the original TTF/TTC files stay in resource/.
+    for (const file of all.filter((file) => /^fonts\/web\/[^/]+\.woff2$/.test(relative(file)))) {
+      const src = path.basename(file);
+      const bytes = readFileSync(file);
+      copyFileSync(file, path.join(stage, src));
+      fonts[relative(file)] = { src, revision: hash(bytes) };
+    }
+    // An empty sheet keeps minimal content fixtures and sites without custom fonts valid.
+    const fontStyle = byName.get('fonts/web/fonts.css');
+    const fontCss = fontStyle ? readFileSync(fontStyle, 'utf8') : '';
+    writeFileSync(path.join(stage, 'fonts.css'), fontCss);
+    fonts['fonts/web/fonts.css'] = { src: 'fonts.css', revision: hash(fontCss) };
     for (const file of [...selected].sort(compare)) {
       const bytes = readFileSync(file);
       const digest = hash(bytes);
@@ -167,8 +212,8 @@ export async function prepareProject({ root = projectRoot, site } = {}) {
       }
       assets[relative(file)] = { src: original, width, height, thumbnail: thumbnails.find((thumb) => thumb.width >= 800)?.src || thumbnails.at(-1).src, thumbnails };
     }
-    for (const item of [...drawing, ...contact, ...skins.flatMap((skin) => skin.images)]) Object.assign(item, assets[item.source]);
-    const payload = { assets, drawing, skins, contact, entries };
+    for (const item of [...drawing, ...contact, ...skins.flatMap((skin) => skin.images), ...happy.flatMap((post) => post.images)]) Object.assign(item, assets[item.source]);
+    const payload = { assets, fonts, drawing, skins, contact, happy, entries };
     const manifest = JSON.stringify({ revision: hash(JSON.stringify(payload)), ...payload }, null, 2) + '\n';
     const manifestPath = path.join(generated, 'media.json');
     if (existsSync(manifestPath) && lstatSync(manifestPath).isSymbolicLink()) throw new Error('Manifest must not be a symlink');
@@ -184,5 +229,5 @@ export async function prepareProject({ root = projectRoot, site } = {}) {
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const result = await prepareProject();
-  console.log(`Prepared ${Object.keys(result.assets).length} images with thumbnails, ${result.drawing.length} drawings and ${result.skins.length} skins.`);
+  console.log(`Prepared ${Object.keys(result.assets).length} images with thumbnails, ${result.drawing.length} drawings, ${result.skins.length} skins and ${result.happy.length} happy posts.`);
 }

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 
 test('skin desktop double-click, original loading, zoom/pan, switching and focus restoration', async ({ page }) => {
@@ -124,6 +124,60 @@ test('contact displays two images with original viewing and the shared backgroun
   await expect(page.locator('[data-viewer-counter]')).toHaveText('2 / 2');
   await page.getByRole('button', { name: '放大', exact: true }).click();
   await expect(page.locator('[data-viewer-zoom]')).toHaveText('125%');
+});
+
+test('happy moments show grouped captions, dates and independent image viewers', async ({ page }) => {
+  await page.goto('/');
+  const background = await page.locator('.site-background').getAttribute('style');
+  await page.locator('nav').getByRole('link', { name: '快乐的事' }).click();
+  await expect(page).toHaveURL(/\/happy\/$/);
+  await expect(page.locator('.site-background')).toHaveAttribute('style', background!);
+  await expect(page.locator('[data-happy-post]').first()).toHaveAttribute('data-happy-post', 'browser-multi');
+  const multi = page.locator('[data-happy-post="browser-multi"]');
+  const single = page.locator('[data-happy-post="browser-single"]');
+  await expect(multi.locator('time')).toHaveAttribute('datetime', '2099-03-01');
+  await expect(multi.locator('.happy-text')).toHaveText('A happy moment.\n<strong>Plain text</strong>');
+  await expect(multi.locator('.happy-text strong')).toHaveCount(0);
+  await expect(multi.locator('.happy-text')).toHaveCSS('white-space', 'pre-wrap');
+  await expect(multi.locator('[data-gallery-image]')).toHaveCount(2);
+  await expect(single.locator('[data-gallery-image]')).toHaveCount(1);
+  await expect(page.locator('[data-happy-post="browser-draft"]')).toHaveCount(0);
+  await multi.locator('[data-gallery-image]').first().click();
+  await expect(multi.locator('[data-viewer-image]')).toBeVisible();
+  await page.keyboard.press('ArrowRight');
+  await expect(multi.locator('[data-viewer-counter]')).toHaveText('2 / 2');
+  await page.keyboard.press('Escape');
+  await single.locator('[data-gallery-image]').click();
+  await expect(single.locator('[data-viewer-image]')).toBeVisible();
+  await expect(single.locator('[data-viewer-counter]')).toHaveText('1 / 1');
+  await expect(single.getByRole('button', { name: '下一张', exact: true })).toBeDisabled();
+});
+
+test('happy resource updates, drafts, removal and an empty feed work without restarting', async ({ page }) => {
+  test.setTimeout(60000);
+  const { root } = JSON.parse(readFileSync('.cache/browser-fixture.json', 'utf8'));
+  const happyRoot = path.resolve(root, 'resource/happy');
+  const folder = path.resolve(happyRoot, 'browser-watch');
+  expect(folder.startsWith(happyRoot + path.sep)).toBe(true);
+  mkdirSync(path.join(folder, 'images'), { recursive: true });
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="cyan"/></svg>';
+  const config = path.join(folder, 'post.json');
+  writeFileSync(path.join(folder, 'images/photo.svg'), svg);
+  writeFileSync(config, JSON.stringify({ text: 'First happy caption', date: '2099-04-01' }));
+  try {
+    await page.goto('/happy/');
+    const item = page.locator('[data-happy-post="browser-watch"]');
+    await expect(item.locator('.happy-text')).toHaveText('First happy caption', { timeout: 20000 });
+    writeFileSync(config, JSON.stringify({ text: 'Updated happy caption', date: '2099-04-01' }));
+    await expect(item.locator('.happy-text')).toHaveText('Updated happy caption', { timeout: 20000 });
+    writeFileSync(config, '{"draft":true}');
+    await expect(item).toHaveCount(0, { timeout: 20000 });
+    // This is the disposable fixture, not the author's resource directory.
+    expect(happyRoot.startsWith(path.resolve(root, 'resource') + path.sep)).toBe(true);
+    rmSync(happyRoot, { recursive: true });
+    await expect(page.locator('[data-happy-post]')).toHaveCount(0, { timeout: 20000 });
+    await expect(page.locator('.empty')).toContainText('还没有记录快乐的事');
+  } finally { rmSync(folder, { recursive: true, force: true }); }
 });
 
 test('without JavaScript the original image links and complete article list remain usable', async ({ browser }) => {

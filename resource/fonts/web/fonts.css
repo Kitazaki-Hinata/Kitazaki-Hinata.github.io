@@ -1,0 +1,26 @@
+/* Relative URLs also work when the site is deployed beneath a project base. */
+@font-face {
+  font-family: 'Alibaba Health';
+  src: url('./alibaba-health-85b-latin.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  unicode-range: U+0000-00FF;
+}
+
+@font-face {
+  font-family: 'Alibaba Health';
+  src: url('./alibaba-health-85b-cjk.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  unicode-range: U+0100-10FFFF;
+}
+
+@font-face {
+  font-family: 'Microsoft YaHei Nav';
+  src: url('./microsoft-yahei-bold-nav.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}

@@ -9,10 +9,12 @@ const active = (href: string) => {
 };
 ---
 <header class="site-header">
-  <a class="brand" href={withBase('/')}>{siteConfig.title}<span> / JOURNAL</span></a>
-  <nav aria-label="主导航">
-    {siteConfig.navigation.map((item) =>
-      <a href={withBase(item.href)} aria-current={active(item.href) ? 'page' : undefined}>{item.label}</a>
-    )}
-  </nav>
+  <div class="site-shell header-inner">
+    <a class="brand" href={withBase('/')}>{siteConfig.title}</a>
+    <nav aria-label="主导航">
+      {siteConfig.navigation.map((item) =>
+        <a href={withBase(item.href)} aria-current={active(item.href) ? 'page' : undefined}>{item.label}</a>
+      )}
+    </nav>
+  </div>
 </header>

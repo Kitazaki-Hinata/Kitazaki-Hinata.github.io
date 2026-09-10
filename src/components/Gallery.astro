@@ -3,8 +3,8 @@ import { resourceUrl } from '../lib/urls';
 import type { GalleryImage } from '../lib/media';
 import Thumbnail from './Thumbnail.astro';
 import ImageViewer from './ImageViewer.astro';
-interface Props { images: GalleryImage[]; activation?: 'single' | 'double' }
-const { images, activation = 'single' } = Astro.props;
+interface Props { images: GalleryImage[]; activation?: 'single' | 'double'; showCaptions?: boolean }
+const { images, activation = 'single', showCaptions = true } = Astro.props;
 ---
 {images.length ? (
   <section data-gallery data-activation={activation}>
@@ -16,14 +16,21 @@ const { images, activation = 'single' } = Astro.props;
             target="_blank" rel="noopener noreferrer" aria-label={'查看原图：' + image.title}>
             <Thumbnail source={image} alt={image.alt} />
           </a>
-          <figcaption>
+          {showCaptions && <figcaption>
             <h2>{image.title}</h2>
             {image.description && <p>{image.description}</p>}
             <a href={resourceUrl(image.src)} data-view-image data-index={index} target="_blank" rel="noopener noreferrer">查看原图 ↗</a>
-          </figcaption>
+          </figcaption>}
         </figure>
       ))}
     </div>
     <ImageViewer />
   </section>
 ) : <p class="panel empty">这里还没有图片，之后再来看看。</p>}
+<style>
+  [data-gallery-image] { display: block; }
+  [data-gallery-image]:focus-visible { outline-offset: -5px; }
+  figcaption h2 { margin-top: 0; }
+  figcaption p { line-height: 1.8; }
+  figcaption > a { font-size: .9rem; font-weight: 700; }
+</style>

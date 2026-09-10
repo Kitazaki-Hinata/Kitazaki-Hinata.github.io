@@ -4,8 +4,8 @@ import Footer from '../components/Footer.astro';
 import { siteConfig } from '../config/site';
 import { resourceUrl, withBase } from '../lib/urls';
 import '../styles/global.css';
-interface Props { title?: string; description?: string }
-const { title, description = siteConfig.description } = Astro.props;
+interface Props { title?: string; description?: string; home?: boolean }
+const { title, description = siteConfig.description, home = false } = Astro.props;
 const pageTitle = title ? title + ' · ' + siteConfig.title : siteConfig.title;
 ---
 <!doctype html>
@@ -14,6 +14,9 @@ const pageTitle = title ? title + ' · ' + siteConfig.title : siteConfig.title;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    <meta name="theme-color" content="#cfe4f4" />
+    <link rel="stylesheet" href={withBase('/resource/fonts.css')} />
+    <link rel="preload" href={withBase('/resource/alibaba-health-85b-latin.woff2')} as="font" type="font/woff2" crossorigin />
     <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
     <title>{pageTitle}</title>
@@ -22,7 +25,7 @@ const pageTitle = title ? title + ' · ' + siteConfig.title : siteConfig.title;
     <a class="skip-link" href="#main">跳到正文</a>
     <div class="site-background" style={{ backgroundImage: 'url("' + resourceUrl(siteConfig.background) + '")' }} aria-hidden="true"></div>
     <Header />
-    <main id="main"><slot /></main>
+    <main id="main" class:list={[{ 'home-main': home }]}><slot /></main>
     <Footer />
   </body>
 </html>

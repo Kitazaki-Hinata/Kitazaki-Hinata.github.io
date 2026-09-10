@@ -4,4 +4,5 @@ export interface MediaAsset { src: string; width: number; height: number; thumbn
 export interface GalleryImage extends MediaAsset { source: string; title: string; description: string; alt: string; date: string }
 export interface Skin { id: string; title: string; description: string; date: string; author: string; download: string; order: number | null; cover: string; images: GalleryImage[] }
 export interface EntryInfo { id: string; route: string; draft: boolean; title: string; summary: string; date: string }
-export const media: { revision: string; assets: Record<string, MediaAsset>; drawing: GalleryImage[]; skins: Skin[]; contact: GalleryImage[]; entries: Record<string, EntryInfo> } = generated;
+export interface HappyPost { id: string; title: string; date: string; text: string; images: GalleryImage[] }
+export const media: { revision: string; assets: Record<string, MediaAsset>; drawing: GalleryImage[]; skins: Skin[]; contact: GalleryImage[]; happy: HappyPost[]; entries: Record<string, EntryInfo> } = generated;

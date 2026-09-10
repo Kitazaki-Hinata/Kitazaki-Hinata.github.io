@@ -2,7 +2,7 @@
 
 本项目使用 Astro + TypeScript + CSS 构建静态个人博客，部署到 GitHub Pages。
 
-**当前阶段：内容维护和图片交互功能已接通。** 现有栏目为主页、osu skin、炒股记录与碎碎念、绘画展示、读书与思考、找我&投喂。 包含自动缩略图、原图查看器、开发资源监听、文章分类筛选、资源与路由校验，以及 Pages 构建流程。页面沿用现有基础样式，等提供参考图后再调整视觉设计。
+**当前阶段：内容功能与 Glassmorphism 视觉样式已接通。** 现有栏目为主页、osu skin、炒股碎碎念、画妹妹、读书与思考、快乐的事、找我&投喂。包含自动缩略图、原图查看器、开发资源监听、文章分类筛选、资源与路由校验，以及 Pages 构建流程。全站使用设计图提供的蓝粉背景、半透明毛玻璃导航与内容卡片，并接入本地字体。
 
 README 位于 Git 仓库根目录，下文路径均相对于此目录。可以整理和替换 `resource/` 中的内容；提交并推送后，Actions 会重新扫描、构建并部署。
 
@@ -20,6 +20,7 @@ README 位于 Git 仓库根目录，下文路径均相对于此目录。可以�
 | 文章详情 | `/stock/<id>/` | `src/pages/stock/[...id].astro` | 对应 Markdown 正文 |
 | 读书与思考 | `/reading/` | `src/pages/reading/index.astro` | `resource/reading_text/**/*.md` |
 | 读书文章详情 | `/reading/<id>/` | `src/pages/reading/[...id].astro` | 对应 Markdown 正文 |
+| 快乐的事 | `/happy/` | `src/pages/happy/index.astro` | `resource/happy/<id>/post.json` 和对应图片 |
 | 找我&投喂 | `/contact/` | `src/pages/contact/index.astro` | `resource/contact/config.json` 和两张图片 |
 
 主页首屏展示名字、短简介及栏目入口，下滑进入自我介绍。当前全站导航在手机上自动换行。暂不设计评论区。
@@ -41,7 +42,11 @@ Kitazaki-Hinata.github.io/
 ├── resource/                           # 人工维护的内容源
 │   ├── about.md                        # 示例自我介绍
 │   ├── background/
-│   │   └── main.svg                    # 全站背景示例
+│   │   └── main-bg.webp                # 全站背景，来自 design/main-bg.png
+│   ├── design/                        # 设计原稿，不自动发布
+│   │   └── main-bg.png                 # 保留的背景 PNG 原图
+│   ├── fonts/                         # 原始字体，不自动发布
+│   │   └── web/                       # 已转换的 WOFF2 与字体样式表
 │   ├── drawing/
 │   │   ├── 2026-09-09-example.svg       # 示例绘画
 │   │   └── 2026-09-09-example.json      # 同名作品说明
@@ -55,6 +60,11 @@ Kitazaki-Hinata.github.io/
 │   │   └── 2026-09-09-example.md        # 示例文章
 │   ├── reading_text/
 │   │   └── 2026-09-10-example.md        # 示例读书笔记
+│   ├── happy/
+│   │   └── 2026-09-10-example/          # 每条快乐记录一个文件夹
+│   │       ├── post.json               # 短文、可选标题、日期和图片顺序
+│   │       └── images/
+│   │           └── 01-moment.svg       # 示例图，可放一张或多张原图
 │   ├── contact/
 │   │   ├── config.json                 # 联系方式与赞助图片的文件名、说明
 │   │   ├── contact.svg                 # 个人联系方式示例图
@@ -65,6 +75,7 @@ Kitazaki-Hinata.github.io/
 │       └── reading/example.svg         # 读书文章插图
 ├── scripts/
 │   ├── prepare-media.mjs               # 校验资源、生成缩略图和媒体清单
+│   ├── prepare-design-fonts.py         # 可选的字体子集生成工具，日常构建不需要
 │   ├── content-rules.mjs               # 共享元数据、路由和 Markdown 引用规则
 │   ├── resource-loader.mjs             # 内容加载与媒体变动后的渲染缓存更新
 │   ├── watch-resources.mjs             # 开发期间监听资源、刷新内容
@@ -82,6 +93,7 @@ Kitazaki-Hinata.github.io/
 │   │   ├── Header.astro
 │   │   ├── Footer.astro
 │   │   ├── SkinCard.astro
+│   │   ├── HappyFeed.astro              # 按日期展示图文记录
 │   │   ├── Gallery.astro
 │   │   ├── Thumbnail.astro
 │   │   ├── ImageViewer.astro
@@ -109,6 +121,7 @@ Kitazaki-Hinata.github.io/
 │       ├── reading/
 │       │   ├── index.astro
 │       │   └── [...id].astro
+│       ├── happy/index.astro
 │       └── contact/index.astro
 ├── tests/                             # 资源处理、缩放计算和浏览器交互测试
 ├── playwright.config.ts               # 浏览器测试配置
@@ -122,19 +135,25 @@ Kitazaki-Hinata.github.io/
 
 ## 3. 全站统一背景与主页
 
-所有页面，包括股票与读书文章、skin、找我&投喂和 404，都通过 `BaseLayout.astro` 使用同一个背景；`ArticleLayout.astro` 复用该布局。
+所有页面，包括股票与读书文章、skin、快乐的事、找我&投喂和 404，都通过 `BaseLayout.astro` 使用同一个背景；`ArticleLayout.astro` 复用该布局。
 
 背景原图放入 `resource/background/`。当前 `src/config/site.ts` 中的设置是：
 
 ```ts
-background: "background/main.svg"
+background: "background/main-bg.webp"
 ```
 
-此路径相对于 `resource/`，对应 `resource/background/main.svg`。可直接替换该图片；如果改用 `main.webp`，将配置同步改为 `background/main.webp`。目录可以存多张备选图，全站只使用配置选中的一张。
+此路径相对于 `resource/`，对应 `resource/background/main-bg.webp`。背景由 `resource/design/main-bg.png` 转换为 WebP，保持 2560 × 1440 原尺寸与透明通道，质量参数为 94；文件从约 8.86 MB 缩小到 1.43 MB。PNG 原图保留在设计目录。可直接替换 WebP；如果修改文件名，将站点配置同步更新。目录可以存多张备选图，全站只使用配置选中的一张。
 
-布局已实现固定全屏背景层、居中覆盖、统一遮罩、半透明内容卡片及图片失败时的纯色回退。详情页不单独设置背景。
+布局使用固定全屏背景层、居中覆盖、带颜色的半透明导航与内容卡片、背景模糊、柔和阴影及图片失败时的纯色回退。详情页不单独设置背景。主页的名称、简介与按钮和导航品牌共享左侧基准；首屏下方留出空白，自我介绍滚动后进入视野。
 
-自我介绍编辑 `resource/about.md`；站点名称、短简介、头像及社交链接编辑 `src/config/site.ts`。头像路径同样相对于 `resource/`。
+自我介绍编辑 `resource/about.md`；站点名称、搜索摘要、头像及社交链接编辑 `src/config/site.ts`。首页首屏的中英文欢迎文字编辑 `src/pages/index.astro`。头像路径同样相对于 `resource/`。
+
+字体源文件在 `resource/fonts/`。网页使用 `resource/fonts/web/` 中的 WOFF2：`Alibaba Health` 用于首页及标题，拉丁字符子集约 7.5 KB，其余字符约 1.04 MB；`Microsoft YaHei Nav` 来自微软雅黑 Bold 的导航字符子集，约 12.5 KB。两者的 CSS 字重均为 `700`，`font-display: swap` 保证字体加载时文字仍可见；正文使用系统字体以保持阅读舒适。
+
+`prepare:media` 只复制 `web/` 里的 WOFF2 和 `fonts.css` 到 `public/resource/`，不会发布原始 TTF/TTC。布局使用 `withBase()` 加载样式和预加载拉丁字体，样式表通过相对路径引用 WOFF2，因此普通项目站点的 base 路径同样有效。
+
+日常构建直接使用已转换的字体，无需 Python。若替换原始字体或增加导航用字，可修改 `scripts/prepare-design-fonts.py` 中的导航文字，然后在已有 fontTools 和 Brotli 的 Python 环境运行 `python scripts/prepare-design-fonts.py`，提交更新后的 WOFF2。导航子集未包含的文字会使用后备字体。
 
 ## 4. osu skin：列表、详情与图片
 
@@ -228,7 +247,7 @@ resource/osu_skin/white-cat/
 
 头像和正文插图放入 `resource/images/`。现有 `stock/`、`reading/` 子目录各有示例图片，分别用于股票和读书文章。找我&投喂的两张图片单独放在 `resource/contact/`。
 
-## 6. 文章栏目与找我&投喂
+## 6. 文章、快乐的事与找我&投喂
 
 ### 炒股记录与碎碎念
 
@@ -310,6 +329,58 @@ draft: false
 
 `category` 可填“读书笔记”“随想”等自定义名称；省略时使用“读书笔记”。没有元数据也可展示，标题回退到第一个一级标题或文件名。设置 `draft: true` 后不会出现在列表，也不会生成详情页。股票和读书区可以使用相同的文件名，因为它们有各自的路由前缀。
 
+### 快乐的事
+
+访问 `/happy/`，按时间浏览“一张图片配一段短文”的生活记录。同一件事也可以配多张图片，文字只显示一次；点击图片打开原图查看器，上一张／下一张只切换这一条记录的图片。栏目复用全站背景、缩略图和查看器。
+
+每条记录使用 `resource/happy/` 下的一个独立文件夹。复制示例后替换图片与短文即可：
+
+```text
+resource/happy/
+├── 2026-09-10-example/
+│   ├── post.json
+│   └── images/
+│       └── 01-moment.svg
+└── 2026-09-11-a-good-day/
+    ├── post.json
+    └── images/
+        ├── 01-photo.jpg
+        └── 02-photo.jpg
+```
+
+文件夹名使用小写英文、数字和短横线，建议以日期开头。最简 `post.json` 只需填写 `text`；系统自动读取这一条记录的 `images/` 文件夹，支持子目录。完整示例：
+
+```json
+{
+  "title": "今天的小确幸",
+  "date": "2026-09-10",
+  "text": "忙完之后，坐下来喝了一杯喜欢的饮料。\n平常的一天，也有值得记住的小快乐。",
+  "alt": "桌上放着的一杯热饮",
+  "draft": false
+}
+```
+
+| 字段 | 规则 |
+| --- | --- |
+| `text` | 已发布记录必填，填写非空短文；作为纯文本展示，保留换行，不解析 Markdown 或 HTML |
+| `title` | 可选；省略时只展示图片、短文及可用日期 |
+| `date` | 可选的真实 `YYYY-MM-DD` 日期；省略时取文件夹名开头的日期，仍没有则隐藏日期 |
+| `alt` | 可选的图片替代文字；省略时使用记录标题与图片序号 |
+| `draft` | 默认 false；true 时不展示该记录，也不发布其图片 |
+| `images` | 可选的非空数组；省略时按文件名自然排序读取全部图片，填写时只发布数组中指定的图片并遵循数组顺序 |
+
+多张图片需要自定义顺序时，可在配置中添加：
+
+```json
+"images": ["images/02-photo.jpg", "images/01-photo.jpg"]
+```
+
+这些路径相对于当前记录文件夹，必须指向其 `images/` 内的图片，大小写一致，不可重复引用。缺少 `post.json`、短文为空、无图片、无效日期、文件不存在或引用其他记录的图片都会报告错误。草稿可以先只填写 `{"draft": true}`，等图文准备好后再发布。
+
+记录按日期倒序排列，无日期的在后，同日期按文件夹名称排序。图文直接展示在栏目列表中；使用 `/happy/#happy-2026-09-10-example` 这样的锚点地址可定位到某条记录，重命名文件夹会改变锚点。
+
+添加时复制一整个示例文件夹；更新时修改 `post.json` 或替换原图；删除时移除整条记录的文件夹。开发预览会自动刷新，删除或隐藏后，生成目录中的对应图片也会清理。所有记录都为空或为草稿时，页面显示空状态。上传原图即可，压缩缩略图由脚本自动生成。
+
 ### 找我&投喂
 
 页面固定展示“个人联系方式”和“赞助渠道”两张图片，点击可以打开原图查看器，支持放大、缩小和切换。所有页面继续使用相同背景。
@@ -341,15 +412,16 @@ draft: false
 
 ## 7. 资源扫描与生成产物
 
-`resource/` 是人工维护的内容源，`public/resource/` 是专用的公开媒体输出目录，`src/generated/media.json` 保存图片映射、绘画、skin、联系与赞助图片以及文章信息。
+`resource/` 是人工维护的内容源，`public/resource/` 是专用的公开媒体输出目录，`src/generated/media.json` 保存图片与字体映射、绘画、skin、快乐图文、联系与赞助图片以及文章信息。
 
 媒体准备过程：
 
 1. 扫描资源、读取 Markdown / JSON，校验元数据类型、真实日期、URL、封面、背景、头像和正文引用。
-2. 检查资源路径大小写冲突、重复路由、无对应图片的绘画说明、skin 文件夹名称和图片目录。
+2. 检查资源路径大小写冲突、重复路由、无对应图片的绘画说明、skin 与快乐记录的文件夹名称和图片目录。
 3. 过滤草稿，按日期、order 和文件名排序，生成图片尺寸及内容清单。
 4. 保留原图字节，生成宽度 400、800、1200px 的 WebP 缩略图，质量参数为 80。按原比例缩小，不拉伸，小于目标尺寸的图片不放大，也不重复生成相同尺寸。
-5. 先在 `.cache/` 中完成解码与压缩，再更新公开图片与清单；校验或解码失败时保留上一次成功生成的媒体。删除或隐藏的图片在成功更新后从输出中清理。
+5. 复制 `resource/fonts/web/` 中的 WOFF2 和 `fonts.css`；缺少自定义字体的站点输出空样式表，仍可正常构建。
+6. 先在 `.cache/` 中完成解码与压缩，再更新公开资源与清单；校验或解码失败时保留上一次成功生成的媒体。删除或隐藏的资源在成功更新后从输出中清理。
 
 支持 JPG、JPEG、PNG、WebP、AVIF、GIF 和 SVG。缩略图会处理照片方向信息；动画使用第一帧作为缩略图，原图保留动画。列表卡片沿用现有封面裁切规则，绘画和详情预览保持图片比例。浏览器根据图片实际显示宽度和设备像素比选择缩略图，采用 [HTML 标准的自动图片尺寸](https://html.spec.whatwg.org/multipage/images.html#sizes-attributes)，并提供旧浏览器回退尺寸。
 
@@ -368,7 +440,7 @@ src/generated/media.json               # 源路径、产物、尺寸、路由等
 
 运行 `npm run dev` 时会监听 `resource/` 以及 `src/config/site.ts`。新增、修改、删除图片、JSON 或 Markdown 后自动重新校验、准备资源并刷新浏览器，不需要手动重启。Markdown 渲染缓存也包含媒体版本，避免图片替换后正文保留旧 URL。保存尚未完成或配置出错时可能出现错误浮层；修正并保存后自动恢复。
 
-Markdown 和 JSON 源文件不会复制到公开目录。草稿不生成股票或读书文章详情；skin 和绘画草稿也不复制对应图片。共用的 `resource/images/` 图片仍会公开，公开 GitHub 仓库中的源文件也能被查看。
+Markdown 和 JSON 源文件不会复制到公开目录。草稿不生成股票或读书文章详情；skin、绘画和快乐记录的草稿也不复制对应图片。共用的 `resource/images/` 图片仍会公开，公开 GitHub 仓库中的源文件也能被查看。
 
 `check`、`build`、`dev` 都先运行媒体准备命令，因此新克隆无需手动创建清单。生成目录由 Git 忽略，只保留 `.gitkeep`。清理范围仅包含专用的媒体产物及临时目录，不会清理原始资源或 `public/favicon.svg`。
 
@@ -436,7 +508,7 @@ Markdown 和 JSON 源文件不会复制到公开目录。草稿不生成股票�
 3. 确认首页、背景、导航和详情路由正常；预览结束后使用 Ctrl+C 停止。
 4. 将源码、工作流、`package.json`、`package-lock.json`、README 和 `resource/` 示例一起提交，推送到 `main`。`dist/`、依赖及自动生成图片继续忽略。仅存在本地的未跟踪图片不会被 Actions 读取。
 5. 打开仓库 `Actions → Deploy Astro to GitHub Pages`，确认 Build Astro site 和 Deploy GitHub Pages 两个任务均成功。
-6. 从 `github-pages` 环境打开输出的网址，预期为 `https://kitazaki-hinata.github.io/`；再测试 `/osu/`、`/drawing/`、`/stock/`、`/reading/`、`/contact/` 以及已实现的详情页，直接刷新详情地址也应正常。
+6. 从 `github-pages` 环境打开输出的网址，预期为 `https://kitazaki-hinata.github.io/`；再测试 `/osu/`、`/drawing/`、`/stock/`、`/reading/`、`/happy/`、`/contact/` 以及已实现的详情页，直接刷新详情地址也应正常。
 
 ```sh
 npm ci
@@ -467,7 +539,7 @@ Windows PowerShell 如果限制 `npm.ps1`，可以把命令里的 `npm` 换成 `
 
 ## 10. 验证与下一步
 
-当前已接通统一背景与导航、主页自我介绍、绘画列表、skin 列表及详情、股票与读书文章列表和详情、找我&投喂图片、404、自动缩略图、原图查看器、分类筛选、资源监听和校验。
+当前已接通统一背景与导航、主页自我介绍、绘画列表、skin 列表及详情、股票与读书文章列表和详情、快乐图文、找我&投喂图片、404、自动缩略图、原图查看器、分类筛选、资源监听和校验。
 
 本地验证命令：
 
@@ -480,6 +552,6 @@ npm run test:browser
 
 浏览器测试在 `.cache/` 内创建隔离的站点副本和测试内容，不修改作者的原始资源。Windows 默认使用已安装的 Microsoft Edge；其他系统先运行 `npx playwright install chromium`。Actions 默认运行类型检查、资源测试和构建；浏览器测试可在本地单独执行。
 
-本次类型检查无错误、警告或提示，10 项资源与缩放测试、8 项浏览器测试通过，构建生成 10 个示例页面。资源测试包含照片方向、动画首帧、读书路由冲突以及联系图片选择和路径校验。浏览器测试覆盖桌面双击、绘画单击、键盘与焦点恢复、滚轮和拖动、触屏双指缩放、加载失败、分类 URL 与历史记录、无 JavaScript 回退，以及资源新增、删除和 Markdown 插图替换后的自动更新；新增读书筛选与嵌套详情、草稿隐藏、联系图片查看、旧项目页面 404，以及读书文章和联系配置的自动更新验证。
+本次类型检查无错误、警告或提示，13 项资源与缩放测试、10 项浏览器测试通过，构建生成 11 个示例页面。资源测试包含照片方向、动画首帧、读书路由冲突以及联系图片选择和路径校验。浏览器测试覆盖桌面双击、绘画单击、键盘与焦点恢复、滚轮和拖动、触屏双指缩放、加载失败、分类 URL 与历史记录、无 JavaScript 回退，以及资源新增、删除和 Markdown 插图替换后的自动更新；新增读书筛选与嵌套详情、草稿隐藏、联系图片查看、旧项目页面 404，以及读书文章和联系配置的自动更新验证。快乐栏目还覆盖图文分组、日期与图片顺序、纯文本换行、多组查看器、草稿隐藏、错误引用、资源清理、自动刷新和空列表。
 
-页面样式等你提供参考图后再制作。线上发布仍需提交并推送到 main，等待 GitHub Actions 成功；本地功能验证不等于已完成线上发布。暂不提供评论区。
+页面已按设计图接入蓝粉背景、本地字体和毛玻璃样式。线上发布仍需提交并推送到 main，等待 GitHub Actions 成功；本地功能验证不等于已完成线上发布。暂不提供评论区。

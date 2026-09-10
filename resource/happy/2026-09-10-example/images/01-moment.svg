@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <title>快乐的事示例：一杯热饮</title>
+  <rect width="1200" height="800" fill="#1a273c"/>
+  <path d="M330 580H890" stroke="#7583a0" stroke-width="18" stroke-linecap="round"/>
+  <path d="M400 320H740V480Q740 570 650 570H490Q400 570 400 480Z" fill="#edf0fa"/>
+  <path d="M740 355H780Q855 355 855 415Q855 475 780 475H740" fill="none" stroke="#edf0fa" stroke-width="26"/>
+  <path d="M470 260Q520 215 470 175M565 260Q615 215 565 175M660 260Q710 215 660 175" fill="none" stroke="#c4b4f0" stroke-width="12" stroke-linecap="round"/>
+</svg>
