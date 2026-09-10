@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
-  <rect width="800" height="800" fill="#1a273c"/>
-  <path d="M400 445L235 290C115 160 310 80 400 225C490 80 685 160 565 290Z" fill="none" stroke="#c4b4f0" stroke-width="12"/>
-  <g fill="#edf0fa" text-anchor="middle" font-family="sans-serif">
-    <text x="400" y="565" font-size="44">赞助渠道待更新</text>
-    <text x="400" y="630" font-size="28">示例图片</text>
-  </g>
-</svg>

@@ -1,10 +1,10 @@
 {
   "contact": {
-    "image": "contact.svg",
-    "description": "欢迎来聊聊共同感兴趣的事。"
+    "image": "contact.png",
+    "description": "这里有她的联系方式，她或许很需要你的陪伴"
   },
   "support": {
-    "image": "support.svg",
-    "description": "感谢你对创作的支持。"
+    "image": "support.png",
+    "description": "谢谢投喂ww 她会偷偷的攒下所有钱，然后带来一个惊喜"
   }
 }

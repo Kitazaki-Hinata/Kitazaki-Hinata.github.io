@@ -3,7 +3,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Gallery from '../../components/Gallery.astro';
 import { media } from '../../lib/media';
 ---
-<BaseLayout title="找我&投喂">
-  <header class="page-heading"><p class="eyebrow">CONTACT & SUPPORT</p><h1>找我&amp;投喂</h1><p>欢迎交流，也谢谢你对创作的支持。点击图片可以查看原图。</p></header>
-  <Gallery images={media.contact} />
+<BaseLayout title="找她&投喂">
+  <header class="page-heading"><p class="eyebrow">CONTACT & SUPPORT</p><h1>找她&amp;投喂</h1><p>这里有她的联系方式。另外，谢谢你认可和赞助她的创作</p></header>
+  <div class="contact-gallery">
+    <Gallery images={media.contact} showOriginalLinks={false} />
+  </div>
 </BaseLayout>
+
+<style>
+  .contact-gallery :global(.gallery) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .contact-gallery :global([data-gallery-image] img) {
+    aspect-ratio: 3 / 1;
+    object-fit: contain;
+  }
+</style>

@@ -1,4 +1,4 @@
-# 关于up主
+# 关于她
 
 **Kitazaki Hinata (其实应该叫Hinata Kitazaki，日向北崎)**
 

@@ -12,6 +12,6 @@ export const siteConfig = {
     { label: "她不一样", href: "/drawing/" },
     { label: "读书与思考", href: "/reading/" },
     { label: "快乐的事", href: "/happy/" },
-    { label: "找我&投喂", href: "/contact/" },
+    { label: "找她&投喂", href: "/contact/" },
   ],
 };

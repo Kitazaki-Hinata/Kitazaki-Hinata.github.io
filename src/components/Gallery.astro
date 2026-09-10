@@ -3,8 +3,8 @@ import { resourceUrl } from '../lib/urls';
 import type { GalleryImage } from '../lib/media';
 import Thumbnail from './Thumbnail.astro';
 import ImageViewer from './ImageViewer.astro';
-interface Props { images: GalleryImage[]; activation?: 'single' | 'double'; showCaptions?: boolean }
-const { images, activation = 'single', showCaptions = true } = Astro.props;
+interface Props { images: GalleryImage[]; activation?: 'single' | 'double'; showCaptions?: boolean; showOriginalLinks?: boolean }
+const { images, activation = 'single', showCaptions = true, showOriginalLinks = true } = Astro.props;
 ---
 {images.length ? (
   <section data-gallery data-activation={activation}>
@@ -19,7 +19,7 @@ const { images, activation = 'single', showCaptions = true } = Astro.props;
           {showCaptions && <figcaption>
             <h2>{image.title}</h2>
             {image.description && <p>{image.description}</p>}
-            <a href={resourceUrl(image.src)} data-view-image data-index={index} target="_blank" rel="noopener noreferrer">查看原图 ↗</a>
+            {showOriginalLinks && <a href={resourceUrl(image.src)} data-view-image data-index={index} target="_blank" rel="noopener noreferrer">查看原图 ↗</a>}
           </figcaption>}
         </figure>
       ))}
