@@ -29,5 +29,26 @@ const pageTitle = title ? title + ' · ' + siteConfig.title : siteConfig.title;
     <Header />
     <main id="main" class:list={[{ 'home-main': home }]}><slot /></main>
     <Footer />
+    <script is:inline>
+      // Run as the page is parsed so the entrance does not wait for a script download.
+      (() => {
+        const selector = [
+          'main .hero > *',
+          'main > .page-heading > *',
+          'main > .back-link',
+          'main .panel',
+          'main [data-filter-controls]',
+          'main [data-gallery] > p',
+          '.site-footer',
+        ].join(', ');
+        const parts = Array.from(document.querySelectorAll(selector))
+          // Cards containing other cards enter as a single unit.
+          .filter((part) => !part.parentElement?.closest(selector));
+        parts.forEach((part, index) => {
+          part.style.setProperty('--page-enter-delay', `${index * 60}ms`);
+          part.classList.add('page-enter');
+        });
+      })();
+    </script>
   </body>
 </html>
