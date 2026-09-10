@@ -2,16 +2,27 @@
 import type { CollectionEntry } from 'astro:content';
 import { entryDate, entrySummary, entryTitle } from '../lib/content';
 import { withBase } from '../lib/urls';
-interface Props { entries: CollectionEntry<'stock'>[] }
+interface Props { entries: CollectionEntry<'stock' | 'reading'>[] }
 const { entries } = Astro.props;
+const categories = [...new Set(entries.map((entry) => entry.data.category))].sort();
 ---
+<section data-article-filter>
+  <div data-filter-controls hidden>
+    <label>分类 <select aria-label="分类"><option value="">全部</option>{categories.map((category) => <option value={category}>{category}</option>)}</select></label>
+    <p data-filter-status role="status"></p>
+  </div>
 <div class="article-list">
   {entries.map((entry) => (
-    <article class="panel">
+    <article class="panel" data-category={entry.data.category}>
       <div class="meta"><span>{entry.data.category}</span><span>{entryDate(entry) || '未注明日期'}</span></div>
-      <h2><a href={withBase('/stock/' + entry.id + '/')}>{entryTitle(entry)}</a></h2>
+      <h2><a href={withBase('/' + entry.collection + '/' + entry.id + '/')}>{entryTitle(entry)}</a></h2>
       <p>{entrySummary(entry)}</p>
     </article>
   ))}
   {!entries.length && <p class="panel empty">还没有发布记录。</p>}
 </div>
+<p data-filter-empty hidden>这个分类暂时没有记录。</p>
+</section>
+<script>
+  import '../scripts/article-filter';
+</script>

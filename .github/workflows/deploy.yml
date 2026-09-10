@@ -66,6 +66,9 @@ jobs:
       - name: Check project
         run: npm run check
 
+      - name: Test resource processing
+        run: npm test
+
       - name: Build Astro site
         run: npm run build
 

@@ -1,0 +1,11 @@
+---
+import { media, type MediaAsset } from '../lib/media';
+import { resourceUrl } from '../lib/urls';
+interface Props { source: string | MediaAsset; alt: string }
+const { source, alt } = Astro.props;
+const asset = typeof source === 'string' ? media.assets[source] : source;
+if (!asset) throw new Error('Missing thumbnail: ' + source);
+---
+<img src={resourceUrl(asset.thumbnail)} srcset={asset.thumbnails.map((thumb) => resourceUrl(thumb.src) + ' ' + thumb.width + 'w').join(', ')}
+  sizes="auto, (min-width: 1223px) 1100px, 90vw"
+  width={asset.width} height={asset.height} alt={alt} loading="lazy" decoding="async" />

@@ -1,5 +1,5 @@
 import { defineCollection } from 'astro:content';
-import { glob } from 'astro/loaders';
+import { resourceLoader } from '../scripts/resource-loader.mjs';
 import { z } from 'astro/zod';
 
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(
@@ -13,23 +13,18 @@ const common = z.object({
   tags: z.array(z.string()).default([]),
   draft: z.boolean().default(false),
 });
-const webUrl = z.url({ protocol: /^https?$/ }).optional();
 
 export const collections = {
   about: defineCollection({
-    loader: glob({ pattern: 'about.md', base: './resource' }),
+    loader: resourceLoader('about', { pattern: 'about.md', base: './resource' }),
     schema: common,
   }),
   stock: defineCollection({
-    loader: glob({ pattern: '**/*.md', base: './resource/stock_text' }),
-    schema: common.extend({ category: z.string().default('碎碎念') }),
+    loader: resourceLoader('stock', { pattern: '**/*.md', base: './resource/stock_text' }),
+    schema: common.extend({ category: z.string().trim().min(1).default('碎碎念') }),
   }),
-  projects: defineCollection({
-    loader: glob({ pattern: '**/*.md', base: './resource/projects' }),
-    schema: common.extend({
-      repo: webUrl, demo: webUrl,
-      cover: z.string().optional(),
-      order: z.number().optional(),
-    }),
+  reading: defineCollection({
+    loader: resourceLoader('reading', { pattern: '**/*.md', base: './resource/reading_text' }),
+    schema: common.extend({ category: z.string().trim().min(1).default('读书笔记') }),
   }),
 };

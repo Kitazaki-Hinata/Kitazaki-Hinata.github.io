@@ -1,0 +1,10 @@
+{
+  "contact": {
+    "image": "contact.svg",
+    "description": "欢迎来聊聊共同感兴趣的事。"
+  },
+  "support": {
+    "image": "support.svg",
+    "description": "感谢你对创作的支持。"
+  }
+}

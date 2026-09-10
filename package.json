@@ -12,13 +12,21 @@
     "dev": "npm run prepare:media && astro dev",
     "check": "npm run prepare:media && astro check",
     "build": "npm run prepare:media && astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "playwright test"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
     "@astrojs/markdown-remark": "7.3.1",
+    "@playwright/test": "1.63.0",
     "@types/node": "24.13.3",
     "astro": "7.3.2",
-    "typescript": "6.0.3"
+    "chokidar": "4.0.3",
+    "gray-matter": "4.0.3",
+    "remark-parse": "11.0.0",
+    "sharp": "0.35.4",
+    "typescript": "6.0.3",
+    "unified": "11.0.5"
   }
 }

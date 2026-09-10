@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750">
+  <rect width="1200" height="750" fill="#1a273c"/>
+  <path d="M220 180Q410 130 600 230Q790 130 980 180V570Q790 520 600 620Q410 520 220 570Z" fill="#edf0fa"/>
+  <path d="M600 230V620M280 260Q420 230 540 290M280 340Q420 310 540 370M660 290Q780 230 920 260M660 370Q780 310 920 340" fill="none" stroke="#7583a0" stroke-width="12"/>
+  <title>读书笔记插图示例：翻开的书</title>
+</svg>

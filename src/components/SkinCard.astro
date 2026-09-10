@@ -1,11 +1,12 @@
 ---
-import { resourceUrl, withBase } from '../lib/urls';
+import { withBase } from '../lib/urls';
+import Thumbnail from './Thumbnail.astro';
 interface Props { skin: { id: string; title: string; cover: string; description: string } }
 const { skin } = Astro.props;
 const href = withBase('/osu_skin/' + skin.id + '/');
 ---
 <article class="panel card">
-  <a href={href}><img src={resourceUrl(skin.cover)} alt={skin.title + ' 封面'} loading="lazy" /></a>
+  <a href={href}><Thumbnail source={skin.cover} alt={skin.title + ' 封面'} /></a>
   <div class="card-body">
     <h2><a href={href}>{skin.title}</a></h2>
     <p>{skin.description}</p>

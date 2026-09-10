@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Gallery from '../../components/Gallery.astro';
+import { media } from '../../lib/media';
+---
+<BaseLayout title="找我&投喂">
+  <header class="page-heading"><p class="eyebrow">CONTACT & SUPPORT</p><h1>找我&amp;投喂</h1><p>欢迎交流，也谢谢你对创作的支持。点击图片可以查看原图。</p></header>
+  <Gallery images={media.contact} />
+</BaseLayout>

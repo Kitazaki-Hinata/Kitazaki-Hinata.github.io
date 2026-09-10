@@ -1,10 +1,12 @@
-# 个人博客：架构与文件维护指南
+﻿# 个人博客：架构与文件维护指南
 
-本项目计划使用 Astro + TypeScript + CSS 构建静态个人博客，部署到 GitHub Pages。
+本项目使用 Astro + TypeScript + CSS 构建静态个人博客，部署到 GitHub Pages。
 
-**当前阶段：基础静态站点已实现。** 已安装 Astro 和检查工具，定义 dev、check、build、preview 命令，并接通统一背景、主页、五个栏目及示例详情页。图片扫描、Markdown 渲染和 Pages 构建流程已连接；缩略图压缩、图片缩放浮层和资源变动监听仍是后续功能。
+**当前阶段：内容维护和图片交互功能已接通。** 现有栏目为主页、osu skin、炒股记录与碎碎念、绘画展示、读书与思考、找我&投喂。 包含自动缩略图、原图查看器、开发资源监听、文章分类筛选、资源与路由校验，以及 Pages 构建流程。页面沿用现有基础样式，等提供参考图后再调整视觉设计。
 
 README 位于 Git 仓库根目录，下文路径均相对于此目录。可以整理和替换 `resource/` 中的内容；提交并推送后，Actions 会重新扫描、构建并部署。
+
+本地更新：先用 `cd` 进入包含 `package.json` 的仓库目录，然后运行 `npm run dev`。保持终端运行，修改内容后浏览器会自动刷新。
 
 ## 1. 栏目与路由
 
@@ -16,12 +18,13 @@ README 位于 Git 仓库根目录，下文路径均相对于此目录。可以�
 | 绘画展示 | `/drawing/` | `src/pages/drawing/index.astro` | `resource/drawing/` |
 | 炒股记录与碎碎念 | `/stock/` | `src/pages/stock/index.astro` | `resource/stock_text/**/*.md` |
 | 文章详情 | `/stock/<id>/` | `src/pages/stock/[...id].astro` | 对应 Markdown 正文 |
-| 代码项目 | `/projects/` | `src/pages/projects/index.astro` | `resource/projects/**/*.md` |
-| 项目详情 | `/projects/<id>/` | `src/pages/projects/[...id].astro` | 对应 Markdown 正文 |
+| 读书与思考 | `/reading/` | `src/pages/reading/index.astro` | `resource/reading_text/**/*.md` |
+| 读书文章详情 | `/reading/<id>/` | `src/pages/reading/[...id].astro` | 对应 Markdown 正文 |
+| 找我&投喂 | `/contact/` | `src/pages/contact/index.astro` | `resource/contact/config.json` 和两张图片 |
 
 主页首屏展示名字、短简介及栏目入口，下滑进入自我介绍。当前全站导航在手机上自动换行。暂不设计评论区。
 
-osu skin 的文件夹只使用一级标识，因此详情模板命名为 `[id].astro`。文章和项目允许子文件夹，因此使用 `[...id].astro`。这些方括号是实际文件名的一部分，无需手动替换；构建逻辑会枚举内容并生成静态页面。参见 [Astro 路由文档](https://docs.astro.build/en/guides/routing/)。
+osu skin 的文件夹只使用一级标识，因此详情模板命名为 `[id].astro`。股票与读书文章允许子文件夹，因此使用 `[...id].astro`。这些方括号是实际文件名的一部分，无需手动替换；构建逻辑会枚举内容并生成静态页面。参见 [Astro 路由文档](https://docs.astro.build/en/guides/routing/)。
 
 ## 2. 已创建的目录与文件
 
@@ -50,15 +53,22 @@ Kitazaki-Hinata.github.io/
 │   │           └── 02-gameplay.svg
 │   ├── stock_text/
 │   │   └── 2026-09-09-example.md        # 示例文章
-│   ├── projects/
-│   │   └── example-blog.md             # 示例项目
+│   ├── reading_text/
+│   │   └── 2026-09-10-example.md        # 示例读书笔记
+│   ├── contact/
+│   │   ├── config.json                 # 联系方式与赞助图片的文件名、说明
+│   │   ├── contact.svg                 # 个人联系方式示例图
+│   │   └── support.svg                 # 赞助渠道示例图
 │   └── images/
 │       ├── avatar.svg
 │       ├── stock/example.svg           # 文章插图
-│       └── projects/example.svg        # 项目封面和截图
+│       └── reading/example.svg         # 读书文章插图
 ├── scripts/
-│   ├── prepare-media.mjs               # 扫描并复制图片、生成清单
-│   └── remark-resource-images.mjs      # 转换 Markdown 插图 URL
+│   ├── prepare-media.mjs               # 校验资源、生成缩略图和媒体清单
+│   ├── content-rules.mjs               # 共享元数据、路由和 Markdown 引用规则
+│   ├── resource-loader.mjs             # 内容加载与媒体变动后的渲染缓存更新
+│   ├── watch-resources.mjs             # 开发期间监听资源、刷新内容
+│   └── remark-resource-images.mjs      # 转换 Markdown 插图和文档链接 URL
 ├── src/
 │   ├── content.config.ts               # Markdown 集合与字段校验
 │   ├── config/site.ts                  # 名称、背景、头像、导航、社交链接
@@ -73,15 +83,20 @@ Kitazaki-Hinata.github.io/
 │   │   ├── Footer.astro
 │   │   ├── SkinCard.astro
 │   │   ├── Gallery.astro
+│   │   ├── Thumbnail.astro
 │   │   ├── ImageViewer.astro
-│   │   ├── ArticleList.astro
-│   │   └── ProjectCard.astro
+│   │   └── ArticleList.astro            # 股票和读书共用的文章列表
 │   ├── lib/
 │   │   ├── content.ts
 │   │   ├── media.ts                    # 媒体数据类型，支持空画廊
 │   │   └── urls.ts
-│   ├── scripts/image-viewer.ts
-│   ├── styles/global.css
+│   ├── scripts/
+│   │   ├── image-viewer.ts             # 图片浮层和鼠标、触屏、键盘操作
+│   │   ├── viewer-math.ts              # 缩放与拖动边界计算
+│   │   └── article-filter.ts           # 分类筛选及 URL / 浏览器历史同步
+│   ├── styles/
+│   │   ├── global.css
+│   │   └── image-viewer.css            # 图片查看器必需的布局样式
 │   └── pages/
 │       ├── index.astro
 │       ├── 404.astro
@@ -91,9 +106,12 @@ Kitazaki-Hinata.github.io/
 │       ├── stock/
 │       │   ├── index.astro
 │       │   └── [...id].astro
-│       └── projects/
-│           ├── index.astro
-│           └── [...id].astro
+│       ├── reading/
+│       │   ├── index.astro
+│       │   └── [...id].astro
+│       └── contact/index.astro
+├── tests/                             # 资源处理、缩放计算和浏览器交互测试
+├── playwright.config.ts               # 浏览器测试配置
 └── public/
     ├── favicon.svg                     # 人工维护的网站图标
     └── resource/
@@ -104,7 +122,7 @@ Kitazaki-Hinata.github.io/
 
 ## 3. 全站统一背景与主页
 
-所有页面，包括文章、skin、项目详情和 404，都通过 `BaseLayout.astro` 使用同一个背景；`ArticleLayout.astro` 复用该布局。
+所有页面，包括股票与读书文章、skin、找我&投喂和 404，都通过 `BaseLayout.astro` 使用同一个背景；`ArticleLayout.astro` 复用该布局。
 
 背景原图放入 `resource/background/`。当前 `src/config/site.ts` 中的设置是：
 
@@ -138,7 +156,7 @@ resource/osu_skin/white-cat/
 | 列表封面 | `skin.json` 的 `cover` | `images/01-cover.svg` |
 | 说明、日期和排序 | `skin.json` | `description`、`date`、`order` |
 | 封面原图与详情原图 | 该 skin 的 `images/` 目录 | `01-cover.svg`、`02-gameplay.svg` |
-| 当前画廊预览 | 原图通过 CSS 缩小显示 | 自动压缩缩略图待实现 |
+| 列表及画廊缩略图 | 构建自动生成至 `public/resource/` | 无需手动压缩或维护 |
 
 当前 `skin.json` 示例：
 
@@ -171,13 +189,15 @@ resource/osu_skin/white-cat/
 
 缺少 `skin.json` 时，采用上述默认值，仍以文件夹为一个 skin。图片应放在 `<id>/images/`；`osu_skin/` 根目录不直接放图片。配置路径错误、空图片目录、规范化后重名或无效 JSON 都应在构建时报告具体位置。
 
-### 当前浏览方式与后续交互
+### 图片浏览方式
 
 `/osu/` 展示多张 skin 卡片，每张只有标题、封面缩略图和可选简介。点击标题或封面进入 `/osu_skin/<id>/`，展示这套 skin 的全部图片缩略图。
 
-当前版本点击详情图片或“查看原图”会在新标签页打开原图，支持浏览器自带的图片查看操作。原图查看浮层尚未接入。
+详情页在电脑上双击缩略图打开原图查看器；触屏轻点打开，键盘选中图片后按 Enter 打开。“查看原图”文字入口单击即可打开。绘画区使用同一个查看器，单击图片打开。
 
-后续交互计划：详情页在电脑上双击缩略图打开原图查看器，触屏设备单击打开，并提供键盘 Enter 操作。查看器支持放大、缩小、适应窗口、拖动、上一张、下一张和关闭；支持滚轮或双指缩放、Esc 关闭、焦点恢复及页面滚动锁定。绘画区使用同一个查看器，单击图片打开。
+查看器支持放大、缩小、适应窗口、放大后拖动、上一张、下一张和关闭；支持滚轮、双指缩放、左右方向键切图、`+` / `-` 缩放、`0` 复位、Esc 关闭。打开时锁定页面滚动，关闭后恢复原入口焦点。缩放范围是适应窗口状态的 1～5 倍，100% 表示适应窗口；小原图在初始状态下不会放大。原图加载失败时显示提示，仍可关闭或切换图片。
+
+查看器内保留“新标签页打开原图”链接。只有打开查看器时才请求对应原图；画廊与卡片使用延迟加载的缩略图。
 
 这里区分三次操作：列表点击进入详情，详情双击打开原图，查看器内操作缩放。JavaScript 不可用时保留通向原图的普通链接。
 
@@ -189,9 +209,9 @@ resource/osu_skin/white-cat/
 4. 删除不需要的示例图片；如果删除的是封面，同时更新 `cover`。
 5. 提交并推送，部署成功即可更新列表与详情。
 
-更改标题修改 `title`，更换封面修改 `cover`，增加截图放入 `images/`，暂时隐藏设置 `draft: true`。可用同名文件替换旧原图；当前公开图片沿用原文件名，替换后必要时强制刷新浏览器。内容哈希文件名属于后续优化。
+更改标题修改 `title`，更换封面修改 `cover`，增加截图放入 `images/`，暂时隐藏设置 `draft: true`。可用同名文件替换旧原图；生成的公开文件名包含内容哈希，图片内容改变后 URL 随之更新。只需维护原图和配置，缩略图与引用会自动更新。
 
-## 5. 绘画、文章插图与代码项目
+## 5. 绘画与文章插图
 
 绘画放入 `resource/drawing/`，支持子文件夹。已有一张示例 SVG，以及同目录、同名的 JSON：
 
@@ -204,13 +224,13 @@ resource/osu_skin/white-cat/
 }
 ```
 
-只放图片也应能展示；JSON 为可选。标题默认取文件名，日期优先取 JSON，其次解析文件名开头的 `YYYY-MM-DD`。有日期的作品倒序排列，无日期的在后，同日期按相对路径排序，不使用 Git 检出时会变化的文件修改时间。同目录应避免仅扩展名不同的同名图片，以免说明文件产生歧义。
+只放图片也应能展示；JSON 为可选。标题默认取文件名，日期优先取 JSON，其次解析文件名开头的 `YYYY-MM-DD`。有日期的作品倒序排列，无日期的在后，同日期按相对路径排序，不使用 Git 检出时会变化的文件修改时间。同目录禁止仅扩展名不同的同名图片，以免说明文件产生歧义；说明 JSON 找不到同名图片时也会报告错误。作品说明还可设置 `draft: true` 暂时隐藏绘画及其公开图片。
 
-头像、文章插图和项目截图放入 `resource/images/`。现有 `stock/`、`projects/` 子目录各有示例图片。
+头像和正文插图放入 `resource/images/`。现有 `stock/`、`reading/` 子目录各有示例图片，分别用于股票和读书文章。找我&投喂的两张图片单独放在 `resource/contact/`。
 
-每个代码项目使用一份 `resource/projects/**/*.md`，可复制 `example-blog.md`。支持 `title`、`description`、`tags`、`repo`、`demo`、`cover`、`order`、`draft`；缺少仓库、演示地址或封面时，隐藏相应入口。项目 `cover` 相对于 `resource/`，例如 `images/projects/example.svg`。项目按 order 升序、标识排序，未指定 order 的在后。
+## 6. 文章栏目与找我&投喂
 
-## 6. 炒股记录与碎碎念
+### 炒股记录与碎碎念
 
 在 `resource/stock_text/` 新建 Markdown，例如现有的 `2026-09-09-example.md`：
 
@@ -245,44 +265,112 @@ resource/stock_text/2026-09-09-example.md
 | --- | --- |
 | `title` | 正文第一个一级标题，再回退到文件名 |
 | `date` | 文件名开头日期，仍缺少则显示“未注明日期” |
-| `category` | “碎碎念”；可选“炒股记录” |
+| `category` | 股票区默认“碎碎念”，读书区默认“读书笔记”；可填写自定义分类 |
 | `tags` | 空数组 |
 | `description` | 从正文提取纯文本摘要 |
 | `draft` | false；true 时不生成列表条目和详情页 |
 
-列表按日期倒序，无日期的在后，同日期按文章标识排序，目前显示分类标签，交互筛选待实现。文章标识来自相对路径去掉扩展名，保留子目录，例如 `2026/review.md` 对应 `/stock/2026/review/`；重命名后网址会改变。构建时应检测路由冲突和无效字段并报告源文件。
+列表按日期倒序，无日期的在后，同日期按文章标识排序，可通过列表上方的分类选择框筛选。分类来自已发布文章的 `category`，支持自定义名称，筛选结果会写入 `?category=...`，刷新、分享链接和浏览器前进后退均可恢复。无匹配内容时显示空状态；关闭 JavaScript 后仍显示完整列表。文章标识来自相对路径去掉小写 `.md` 扩展名，保留子目录，例如 `2026/review.md` 对应 `/stock/2026/review/`。各段执行 Unicode NFKC 规范化、转小写、空白转短横线，只保留文字、数字、短横线和下划线；例如 `中文 笔记.md` 对应 `中文-笔记`。空标识、`index` 路径段以及规范化后重名会报错，避免覆盖栏目或详情页。不要设置 `slug` 字段；重命名文件会改变网址。日期请用带引号的 `"YYYY-MM-DD"` 字符串。
 
-正文插图优先使用相对于 Markdown 文件的路径，这样在编辑器中也能预览；上例使用 `../images/stock/example.svg`。嵌套目录中的文章需要相应增加 `../`。也可约定 `resource/images/...` 表示仓库根目录下的资源。由 `remark-resource-images.mjs` 解析源文件位置、校验引用，再转为带站点 base 的公开 URL。
+正文插图优先使用相对于 Markdown 文件的路径，这样在编辑器中也能预览；上例使用 `../images/stock/example.svg`。嵌套目录中的文章需要相应增加 `../`。也可约定 `resource/images/...` 表示仓库根目录下的资源。由 `remark-resource-images.mjs` 解析源文件位置、校验引用，再转为带站点 base 的哈希图片 URL。
 
-文章和项目采用 Astro 构建时内容集合，通过 `glob()` 读取、`getStaticPaths()` 生成详情路由、`render()` 渲染正文，参考 [Astro 内容集合文档](https://docs.astro.build/en/guides/content-collections/)。
+标准 Markdown 的行内插图和引用式插图均可使用；代码块内的示例不会被当成真实引用。相对 `.md` 链接（如 `[上一篇](./previous.md)`）会转换成对应详情页地址，发布内容链接到缺失或草稿文档会报错。文件路径大小写必须完全一致，路径分隔符用 `/`。
+
+股票与读书文章采用 Astro 构建时内容集合，通过 `glob()` 读取、`getStaticPaths()` 生成详情路由、`render()` 渲染正文，参考 [Astro 内容集合文档](https://docs.astro.build/en/guides/content-collections/)。
+
+### 读书与思考
+
+在 `resource/reading_text/` 新建 Markdown，维护方式与股票区相同：列表自动提取标题、日期与摘要，按日期倒序排列，支持分类筛选、子文件夹、草稿和正文插图。
+
+```text
+resource/reading_text/2026-09-10-example.md
+    → /reading/2026-09-10-example/
+resource/reading_text/2026/a-book.md
+    → /reading/2026/a-book/
+```
+
+可以复制已有示例，也可以从下面开始：
+
+```markdown
+---
+title: "读完一本书之后"
+date: "2026-09-10"
+category: "读书笔记"
+tags: ["阅读", "思考"]
+description: "记录这次阅读带来的启发。"
+draft: false
+---
+
+# 读完一本书之后
+
+在这里写正文。
+
+![阅读插图](../images/reading/example.svg)
+```
+
+`category` 可填“读书笔记”“随想”等自定义名称；省略时使用“读书笔记”。没有元数据也可展示，标题回退到第一个一级标题或文件名。设置 `draft: true` 后不会出现在列表，也不会生成详情页。股票和读书区可以使用相同的文件名，因为它们有各自的路由前缀。
+
+### 找我&投喂
+
+页面固定展示“个人联系方式”和“赞助渠道”两张图片，点击可以打开原图查看器，支持放大、缩小和切换。所有页面继续使用相同背景。
+
+把图片放在 `resource/contact/`，通过同目录的 `config.json` 指定文件名。现有示例：
+
+```json
+{
+  "contact": {
+    "image": "contact.svg",
+    "description": "欢迎来聊聊共同感兴趣的事。"
+  },
+  "support": {
+    "image": "support.svg",
+    "description": "感谢你对创作的支持。"
+  }
+}
+```
+
+- `contact.image`：个人联系方式图片；`support.image`：赞助渠道图片。两个字段必填，路径相对于 `resource/contact/`。
+- `description`：可选说明；`alt`：可选替代文字，默认使用对应标题。
+- 当前两张 SVG 只是明确标注的示例图，不包含真实联系方式或收款码。
+- 更换为 PNG 时，例如放入 `my-contact.png` 和 `support-code.png`，再修改配置中对应的 `image` 即可。文件名、后缀和大小写需要一致。
+- 只发布配置选中的两张图片；目录内其他备选图片不会自动展示或复制到公开媒体目录。引用缺失文件或目录外的图片会阻止构建。
+- 继续维护原图即可，系统自动生成缩略图；查看器打开的是完整原图。二维码或小字图片建议使用清晰的 PNG 原图。
+- 本地运行 `npm run dev` 后，修改配置或替换图片都会自动更新；线上需要提交、推送并等待部署。
+
+原“代码项目”栏目、详情页、组件及其资源目录已经移除。`/projects/` 和原项目详情地址不再生成，访问时返回 404。
 
 ## 7. 资源扫描与生成产物
 
-`resource/` 是人工维护的内容源，`public/resource/` 是专用的公开媒体输出目录，`src/generated/media.json` 是绘画和 skin 的构建清单。
+`resource/` 是人工维护的内容源，`public/resource/` 是专用的公开媒体输出目录，`src/generated/media.json` 保存图片映射、绘画、skin、联系与赞助图片以及文章信息。
 
-`prepare-media.mjs` 已实现：
+媒体准备过程：
 
-1. 扫描绘画及 skin 图片，读取同名作品说明和 skin 配置。
-2. 校验元数据类型、日期、下载链接、封面和站点背景／头像引用。
-3. 过滤未发布的 skin，按日期、order 和文件名排序。
-4. 重建公开图片目录，复制图片，输出媒体清单；删除的图片和被隐藏的 skin 不会残留在输出中。
+1. 扫描资源、读取 Markdown / JSON，校验元数据类型、真实日期、URL、封面、背景、头像和正文引用。
+2. 检查资源路径大小写冲突、重复路由、无对应图片的绘画说明、skin 文件夹名称和图片目录。
+3. 过滤草稿，按日期、order 和文件名排序，生成图片尺寸及内容清单。
+4. 保留原图字节，生成宽度 400、800、1200px 的 WebP 缩略图，质量参数为 80。按原比例缩小，不拉伸，小于目标尺寸的图片不放大，也不重复生成相同尺寸。
+5. 先在 `.cache/` 中完成解码与压缩，再更新公开图片与清单；校验或解码失败时保留上一次成功生成的媒体。删除或隐藏的图片在成功更新后从输出中清理。
 
-当前支持 JPG、JPEG、PNG、WebP、AVIF、GIF 和 SVG。公开目录保留源图片的相对路径：
+支持 JPG、JPEG、PNG、WebP、AVIF、GIF 和 SVG。缩略图会处理照片方向信息；动画使用第一帧作为缩略图，原图保留动画。列表卡片沿用现有封面裁切规则，绘画和详情预览保持图片比例。浏览器根据图片实际显示宽度和设备像素比选择缩略图，采用 [HTML 标准的自动图片尺寸](https://html.spec.whatwg.org/multipage/images.html#sizes-attributes)，并提供旧浏览器回退尺寸。
+
+源文件仍使用自己命名的目录和文件名；公开产物采用平铺的哈希文件名，例如：
 
 ```text
-public/resource/
-├── .gitkeep
-├── background/main.svg
-├── images/...
-├── drawing/2026-09-09-example.svg
-└── osu_skin/example-skin/images/...
+resource/drawing/my-art.png             # 人工维护
+public/resource/<hash>.png              # 原图副本
+public/resource/<hash>-400-q80-v1.webp   # 自动缩略图
+public/resource/<hash>-800-q80-v1.webp
+public/resource/<hash>-1200-q80-v1.webp
+src/generated/media.json               # 源路径、产物、尺寸、路由等映射
 ```
 
-当前预览图直接使用原图，借助 CSS 缩小并延迟加载；不额外生成压缩缩略图或带哈希的文件名。缩略图、图片尺寸优化、图片查看器及开发时资源监听仍待实现。开发中新增、替换或删除图片后，请重新启动 `npm run dev`；正式构建始终重新扫描。
+**无需自己制作缩略图。** 只需上传合适清晰度的原图；生成参数在 `scripts/prepare-media.mjs` 中统一维护。不要在 Markdown 或 JSON 里手写哈希文件名，继续引用 `resource/` 下的原始路径。
 
-Markdown 和 JSON 源文件不会复制到公开目录。草稿不会生成文章或项目详情；skin 草稿也不会复制对应图片。公开 GitHub 仓库中的源文件仍可被查看。
+运行 `npm run dev` 时会监听 `resource/` 以及 `src/config/site.ts`。新增、修改、删除图片、JSON 或 Markdown 后自动重新校验、准备资源并刷新浏览器，不需要手动重启。Markdown 渲染缓存也包含媒体版本，避免图片替换后正文保留旧 URL。保存尚未完成或配置出错时可能出现错误浮层；修正并保存后自动恢复。
 
-`check`、`build`、`dev` 都先运行媒体准备命令，因此新克隆无需手动创建媒体清单。生成目录和图片继续由 Git 忽略，只保留 `.gitkeep`。脚本只清理专用的 `public/resource/` 内容，不清理原始资源或 `public/favicon.svg`。
+Markdown 和 JSON 源文件不会复制到公开目录。草稿不生成股票或读书文章详情；skin 和绘画草稿也不复制对应图片。共用的 `resource/images/` 图片仍会公开，公开 GitHub 仓库中的源文件也能被查看。
+
+`check`、`build`、`dev` 都先运行媒体准备命令，因此新克隆无需手动创建清单。生成目录由 Git 忽略，只保留 `.gitkeep`。清理范围仅包含专用的媒体产物及临时目录，不会清理原始资源或 `public/favicon.svg`。
 
 ## 8. Git 忽略规则
 
@@ -291,7 +379,7 @@ Markdown 和 JSON 源文件不会复制到公开目录。草稿不会生成文�
 | 类型 | 忽略内容 |
 | --- | --- |
 | 依赖和缓存 | `node_modules/`、`.astro/`、`.cache/`、`.vite/`、`*.tsbuildinfo` |
-| 构建与检查结果 | `dist/`、`coverage/` |
+| 构建与检查结果 | `dist/`、`coverage/`、`test-results/`、`playwright-report/` |
 | 自动生成内容 | `src/generated/*`、`public/resource/*`，各自保留 `.gitkeep` |
 | 本地配置 | `.env`、`.env.*`、`*.local`，允许提交 `.env.example` |
 | 日志与临时文件 | `*.log`、`*.tmp`、`*.temp`、`*.swp`、`*.swo`、`*.bak`、`*~` |
@@ -311,10 +399,12 @@ Markdown 和 JSON 源文件不会复制到公开目录。草稿不会生成文�
 
 | 命令 | 实际行为 |
 | --- | --- |
-| `npm run dev` | 先准备媒体，再启动 Astro 开发服务器；媒体变化后需要重启 |
+| `npm run dev` | 先准备媒体，再启动 Astro 开发服务器；监听资源并自动刷新 |
 | `npm run check` | 先准备媒体，再执行 Astro 类型和内容检查 |
 | `npm run build` | 准备资源，再生成完整静态网站到 `dist/` |
-| `npm run preview` | 预览已构建的 `dist/` |
+| `npm run preview` | 预览已构建的 `dist/`，修改内容后需重新 build |
+| `npm test` | 检查资源处理、错误路径、草稿、路由和缩放计算 |
+| `npm run test:browser` | 在隔离的临时站点中运行桌面与触屏浏览器测试 |
 
 `check` 和 `build` 都先执行 `npm run prepare:media`，不依赖本地预先生成的文件。动态详情页已经通过 `getStaticPaths()` 枚举内容并渲染，首页及所有栏目使用同一个布局。
 
@@ -328,7 +418,7 @@ Markdown 和 JSON 源文件不会复制到公开目录。草稿不会生成文�
 2. 检查 `package.json` 中的 check、build 命令及 Astro 依赖是否已配置。
 3. 执行 `npm ci`，按锁文件安装依赖。
 4. 配置 GitHub Pages，尽早发现 Pages 尚未启用等问题。
-5. 执行 `npm run check`，失败时停止。
+5. 执行 `npm run check` 和 `npm test`，失败时停止。
 6. 执行 `npm run build`，失败时停止。
 7. 确认生成了非空的 `dist/index.html`。
 8. 将 `dist/` 上传为 Pages 构建产物。
@@ -346,11 +436,12 @@ Markdown 和 JSON 源文件不会复制到公开目录。草稿不会生成文�
 3. 确认首页、背景、导航和详情路由正常；预览结束后使用 Ctrl+C 停止。
 4. 将源码、工作流、`package.json`、`package-lock.json`、README 和 `resource/` 示例一起提交，推送到 `main`。`dist/`、依赖及自动生成图片继续忽略。仅存在本地的未跟踪图片不会被 Actions 读取。
 5. 打开仓库 `Actions → Deploy Astro to GitHub Pages`，确认 Build Astro site 和 Deploy GitHub Pages 两个任务均成功。
-6. 从 `github-pages` 环境打开输出的网址，预期为 `https://kitazaki-hinata.github.io/`；再测试 `/osu/`、`/drawing/`、`/stock/`、`/projects/` 以及已实现的详情页，直接刷新详情地址也应正常。
+6. 从 `github-pages` 环境打开输出的网址，预期为 `https://kitazaki-hinata.github.io/`；再测试 `/osu/`、`/drawing/`、`/stock/`、`/reading/`、`/contact/` 以及已实现的详情页，直接刷新详情地址也应正常。
 
 ```sh
 npm ci
 npm run check
+npm test
 npm run build
 npm run preview
 ```
@@ -374,18 +465,21 @@ Windows PowerShell 如果限制 `npm.ps1`，可以把命令里的 `npm` 换成 `
 
 输出检查只确认首页文件存在且非空，不代表页面内容和所有交互已经正确。GitHub Pages 托管静态文件，新增内容需要提交、推送并等待重新构建部署；浏览器不直接枚举资源目录。网页 URL 统一使用 `/`，资源引用大小写必须与文件一致。
 
-## 10. 当前范围与后续完善
+## 10. 验证与下一步
 
-基础版本已接通：统一背景与导航、主页自我介绍、绘画列表、skin 列表及详情、股票 Markdown 列表及详情、项目列表及详情、404 页面和静态构建。
+当前已接通统一背景与导航、主页自我介绍、绘画列表、skin 列表及详情、股票与读书文章列表和详情、找我&投喂图片、404、自动缩略图、原图查看器、分类筛选、资源监听和校验。
 
-后续完善：
+本地验证命令：
 
-- 自动生成压缩缩略图、尺寸信息和带哈希的图片文件名。
-- 图片浮层的双击查看、缩放、拖动、切换和触屏操作。
-- 开发时监听媒体目录，避免新增图片后需要重启开发服务器。
-- 分类筛选，以及更完整的资源和路由冲突检查。
-- 实际 Pages 发布后的浏览器交互与移动端验证。
+```sh
+npm run check
+npm test
+npm run build
+npm run test:browser
+```
 
-部署前至少确认：检查与构建成功、首页非空、导航和示例详情可访问、Markdown 插图正常、详情地址刷新正常。新内容必须提交到仓库才会参与 GitHub Actions 构建。暂不提供评论区。
+浏览器测试在 `.cache/` 内创建隔离的站点副本和测试内容，不修改作者的原始资源。Windows 默认使用已安装的 Microsoft Edge；其他系统先运行 `npx playwright install chromium`。Actions 默认运行类型检查、资源测试和构建；浏览器测试可在本地单独执行。
 
-本次本地验证：`npm ci`、`npm run check` 和 `npm run build` 通过，类型检查无错误、警告或提示，构建输出 9 个页面。通过 Astro 预览服务器检查了 8 个正常页面、16 个内部链接和资源，以及 3 个应返回 404 的地址。线上发布仍需将本次改动推送到 main 后由 GitHub Actions 执行。
+本次类型检查无错误、警告或提示，10 项资源与缩放测试、8 项浏览器测试通过，构建生成 10 个示例页面。资源测试包含照片方向、动画首帧、读书路由冲突以及联系图片选择和路径校验。浏览器测试覆盖桌面双击、绘画单击、键盘与焦点恢复、滚轮和拖动、触屏双指缩放、加载失败、分类 URL 与历史记录、无 JavaScript 回退，以及资源新增、删除和 Markdown 插图替换后的自动更新；新增读书筛选与嵌套详情、草稿隐藏、联系图片查看、旧项目页面 404，以及读书文章和联系配置的自动更新验证。
+
+页面样式等你提供参考图后再制作。线上发布仍需提交并推送到 main，等待 GitHub Actions 成功；本地功能验证不等于已完成线上发布。暂不提供评论区。

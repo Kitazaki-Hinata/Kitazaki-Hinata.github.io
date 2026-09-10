@@ -1,0 +1,13 @@
+.image-viewer { width: 96vw; max-width: 1500px; height: 94dvh; max-height: 94dvh; padding: 1rem; border: 1px solid currentColor; background: #111b2b; color: inherit; }
+.image-viewer::backdrop { background: #000b; }
+.image-viewer[open] { display: flex; flex-direction: column; gap: .75rem; }
+.viewer-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .5rem 1rem; }
+.viewer-toolbar:first-child { justify-content: space-between; }
+.viewer-toolbar button { font: inherit; cursor: pointer; min-height: 44px; padding: .25rem .6rem; }
+.viewer-toolbar button:disabled { cursor: default; }
+.viewer-viewport { flex: 1; min-height: 0; position: relative; overflow: hidden; touch-action: none; overscroll-behavior: contain; user-select: none; }
+.viewer-viewport img { position: absolute; left: 50%; top: 50%; max-width: none; max-height: none; transform-origin: center; pointer-events: none; }
+.viewer-viewport img[hidden] { display: none; }
+.viewer-viewport[data-zoomed="true"] { cursor: grab; }
+.viewer-viewport[data-zoomed="true"]:active { cursor: grabbing; }
+.viewer-viewport [role="status"] { text-align: center; }

@@ -8,6 +8,8 @@ node_modules/
 # Build output and generated media (keep directory placeholders)
 /dist/
 /coverage/
+/playwright-report/
+/test-results/
 /src/generated/*
 !/src/generated/.gitkeep
 /public/resource/*
@@ -41,3 +43,10 @@ Thumbs.db
 Desktop.ini
 
 # Keep resource images, Markdown, JSON, SVG and package-lock.json tracked.
+
+
+# other files to ignore
+*.zip
+*.psd
+*.psb
+*.rar

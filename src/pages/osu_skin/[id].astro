@@ -16,5 +16,5 @@ const { skin } = Astro.props;
     <div class="meta">{skin.author && <span>{skin.author}</span>}{skin.date && <time datetime={skin.date}>{skin.date}</time>}</div>
     {skin.download && <a class="button" href={skin.download} target="_blank" rel="noopener noreferrer">下载 skin ↗</a>}
   </header>
-  <Gallery images={skin.images} />
+  <Gallery images={skin.images} activation="double" />
 </BaseLayout>

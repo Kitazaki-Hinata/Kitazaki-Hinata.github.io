@@ -1,2 +1,28 @@
-<!-- TODO: Accessible image dialog with original image, zoom, fit, previous/next and close controls. -->
-<!-- Delegate interaction to src/scripts/image-viewer.ts. -->
+---
+import '../styles/image-viewer.css';
+const titleId = 'viewer-' + crypto.randomUUID();
+---
+<dialog class="image-viewer" aria-labelledby={titleId}>
+  <div class="viewer-toolbar">
+    <span id={titleId} data-viewer-title>图片查看器</span>
+    <button type="button" data-action="close" autofocus>关闭（Esc）</button>
+  </div>
+  <div class="viewer-viewport" tabindex="0" aria-label="图片区域，可用滚轮缩放，放大后拖动图片">
+    <img data-viewer-image alt="" draggable="false" hidden />
+    <p data-viewer-status role="status"></p>
+  </div>
+  <div class="viewer-toolbar" aria-label="图片操作">
+    <button type="button" data-action="previous" aria-label="上一张">上一张</button>
+    <span data-viewer-counter></span>
+    <button type="button" data-action="next" aria-label="下一张">下一张</button>
+    <button type="button" data-action="out" aria-label="缩小">−</button>
+    <output data-viewer-zoom aria-label="相对适应窗口的缩放比例">100%</output>
+    <button type="button" data-action="in" aria-label="放大">＋</button>
+    <button type="button" data-action="fit">适应窗口</button>
+    <a data-viewer-original target="_blank" rel="noopener noreferrer">新标签页打开原图 ↗</a>
+  </div>
+</dialog>
+<script>
+  import { initializeViewers } from '../scripts/image-viewer';
+  initializeViewers();
+</script>
