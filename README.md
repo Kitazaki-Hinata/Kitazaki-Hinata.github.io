@@ -149,7 +149,7 @@ background: "background/main-bg.webp"
 
 自我介绍编辑 `resource/about.md`；站点名称、搜索摘要、头像及社交链接编辑 `src/config/site.ts`。首页首屏的中英文欢迎文字编辑 `src/pages/index.astro`。头像路径同样相对于 `resource/`。
 
-字体源文件在 `resource/fonts/`。网页使用 `resource/fonts/web/` 中的 WOFF2：`Alibaba Health` 用于首页及标题，拉丁字符子集约 7.5 KB，其余字符约 1.04 MB；`Microsoft YaHei Nav` 来自微软雅黑 Bold 的导航字符子集，约 12.5 KB。两者的 CSS 字重均为 `700`，`font-display: swap` 保证字体加载时文字仍可见；正文使用系统字体以保持阅读舒适。
+字体源文件在 `resource/fonts/`。网页使用 `resource/fonts/web/` 中的 WOFF2：首页大字号名称使用 `Torus Pro` Regular，完整转换自 `TorusPro-Regular.ttf`，CSS 字重为 `400`；首页其他文字及标题保留 `Alibaba Health`，拉丁字符子集约 7.5 KB，其余字符约 1.04 MB；`Microsoft YaHei Nav` 来自微软雅黑 Bold 的导航字符子集，约 12.5 KB。后两者的 CSS 字重均为 `700`；所有自定义字体使用 `font-display: swap`，保证字体加载时文字仍可见；正文使用系统字体以保持阅读舒适。
 
 `prepare:media` 只复制 `web/` 里的 WOFF2 和 `fonts.css` 到 `public/resource/`，不会发布原始 TTF/TTC。布局使用 `withBase()` 加载样式和预加载拉丁字体，样式表通过相对路径引用 WOFF2，因此普通项目站点的 base 路径同样有效。
 

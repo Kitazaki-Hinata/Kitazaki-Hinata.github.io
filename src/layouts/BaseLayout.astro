@@ -17,6 +17,7 @@ const pageTitle = title ? title + ' · ' + siteConfig.title : siteConfig.title;
     <meta name="theme-color" content="#cfe4f4" />
     <link rel="stylesheet" href={withBase('/resource/fonts.css')} />
     <link rel="preload" href={withBase('/resource/alibaba-health-85b-latin.woff2')} as="font" type="font/woff2" crossorigin />
+    {home && <link rel="preload" href={withBase('/resource/torus-pro-regular.woff2')} as="font" type="font/woff2" crossorigin />}
     <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
     <title>{pageTitle}</title>

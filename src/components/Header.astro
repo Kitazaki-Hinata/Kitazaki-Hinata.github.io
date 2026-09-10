@@ -18,3 +18,15 @@ const active = (href: string) => {
     </nav>
   </div>
 </header>
+<script is:inline>
+  // Reserve the actual navigation height, including wrapped links and loaded fonts.
+  (() => {
+    const header = document.querySelector('.site-header');
+    if (!header) return;
+    const updateHeight = () => {
+      document.documentElement.style.setProperty('--header-offset', header.getBoundingClientRect().height + 'px');
+    };
+    updateHeight();
+    new ResizeObserver(updateHeight).observe(header);
+  })();
+</script>

@@ -16,6 +16,14 @@ OUTPUT = SOURCE / "web"
 NAVIGATION = "Kitazaki Hinata 主页 osu skin 炒股记录与碎碎念 炒股碎碎念 绘画展示 画妹妹 读书与思考 快乐的事 找我&投喂 打开菜单 关闭菜单 主导航"
 
 
+def make_woff2(source, filename):
+    """Convert a complete font without removing glyphs or hinting."""
+    with TTFont(source) as font:
+        font.flavor = "woff2"
+        font.save(OUTPUT / filename)
+    print(f"{filename}: {(OUTPUT / filename).stat().st_size:,} bytes")
+
+
 def make_subset(source, filename, unicodes, font_number=None):
     options = subset.Options()
     options.hinting = False
@@ -31,6 +39,7 @@ def make_subset(source, filename, unicodes, font_number=None):
 
 def main():
     OUTPUT.mkdir(parents=True, exist_ok=True)
+    make_woff2(SOURCE / "TorusPro-Regular.ttf", "torus-pro-regular.woff2")
     alibaba = SOURCE / "AlibabaHealthFont2.0CN-85B.ttf"
     with TTFont(alibaba) as font:
         codepoints = set(font.getBestCmap())

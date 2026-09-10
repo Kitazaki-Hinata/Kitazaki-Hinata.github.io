@@ -14,11 +14,12 @@
   --page-gutter: clamp(1.5rem, 14.6vw, 22rem);
   --content-width: 1320px;
   --header-height: 4.5rem;
+  --header-offset: calc(var(--header-height) + 1px);
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: calc(var(--header-height) + 2rem); }
-body { margin: 0; min-width: 320px; isolation: isolate; }
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--header-offset) + 2rem); overscroll-behavior-y: none; }
+body { margin: 0; min-width: 320px; isolation: isolate; padding-top: var(--header-offset); overscroll-behavior-y: none; }
 ::selection { background: #acd3ff; color: var(--ink); }
 a { color: inherit; text-underline-offset: .25em; }
 a:hover { color: var(--accent); }
@@ -34,10 +35,10 @@ p { color: var(--muted); }
 .site-background { position: fixed; inset: 0; z-index: -1; pointer-events: none; background-size: cover; background-position: center; background-repeat: no-repeat; }
 .site-shell, main, .site-footer { width: min(var(--content-width), calc(100% - var(--page-gutter) * 2)); margin-inline: auto; }
 .site-header {
-  position: sticky;
-  top: 0;
+  position: fixed;
+  inset: 0 0 auto;
   z-index: 10;
-  background: rgba(207, 228, 244, .5);
+  background: rgba(207, 228, 244, .3);
   border-bottom: 1px solid rgba(255, 255, 255, .45);
   box-shadow: 0 6px 24px rgba(45, 76, 101, .36);
   -webkit-backdrop-filter: blur(18px);
@@ -67,7 +68,7 @@ main { min-height: 75svh; padding: 3.5rem 0 6rem; }
   font-weight: 700;
 }
 .home-hero .eyebrow { margin: 0; font-size: clamp(1rem, 1.28vw, 1.25rem); line-height: 1.5; letter-spacing: 0; color: var(--ink); }
-.home-hero h1 { margin: clamp(2.5rem, 5.5svh, 4rem) 0 clamp(2.75rem, 6svh, 4.5rem); font-size: clamp(3rem, 5.2vw, 6.25rem); line-height: 1.15; letter-spacing: 0; }
+.home-hero h1 { margin: clamp(2.5rem, 5.5svh, 4rem) 0 clamp(2.75rem, 6svh, 4.5rem); font-family: "Torus Pro", var(--display-font); font-weight: 400; font-size: clamp(3rem, 5.2vw, 6.25rem); line-height: 1.15; letter-spacing: 0; }
 .hero-description { font-size: clamp(1rem, 1.28vw, 1.25rem); max-width: 100%; margin: 0; color: var(--ink); line-height: 1.5; overflow-wrap: anywhere; }
 .hero-description span { display: block; }
 .hero-links { display: flex; align-items: center; flex-wrap: wrap; gap: 1.25rem 2rem; margin-top: clamp(2.5rem, 7svh, 4rem); }
@@ -141,8 +142,7 @@ main { min-height: 75svh; padding: 3.5rem 0 6rem; }
   .brand { font-size: 1.1rem; }
 }
 @media (max-width: 780px) {
-  :root { --page-gutter: clamp(1.25rem, 6vw, 3rem); }
-  .site-header { position: relative; }
+  :root { --page-gutter: clamp(1.25rem, 6vw, 3rem); --header-offset: 8.6rem; }
   .header-inner { flex-direction: column; align-items: flex-start; gap: .5rem; padding-block: 1rem .75rem; }
   nav { gap: .1rem 1rem; font-size: .8rem; }
   nav a { padding-block: .4rem; }

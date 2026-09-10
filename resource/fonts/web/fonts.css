@@ -1,5 +1,13 @@
 /* Relative URLs also work when the site is deployed beneath a project base. */
 @font-face {
+  font-family: 'Torus Pro';
+  src: url('./torus-pro-regular.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'Alibaba Health';
   src: url('./alibaba-health-85b-latin.woff2') format('woff2');
   font-style: normal;
