@@ -42,9 +42,11 @@ Kitazaki-Hinata.github.io/
 ├── resource/                           # 人工维护的内容源
 │   ├── about.md                        # 示例自我介绍
 │   ├── background/
-│   │   └── main-bg.webp                # 全站背景，来自 design/main-bg.png
+│   │   ├── main-bg.png                 # 保留的首页背景 PNG 原图
+│   │   ├── main-bg.webp                # 首页使用的压缩背景
+│   │   └── side-bg.webp                # 其他页面使用的背景
 │   ├── design/                        # 设计原稿，不自动发布
-│   │   └── main-bg.png                 # 保留的背景 PNG 原图
+│   │   └── main-bg.png                 # 设计原稿，不与网页背景自动同步
 │   ├── fonts/                         # 原始字体，不自动发布
 │   │   └── web/                       # 已转换的 WOFF2 与字体样式表
 │   ├── drawing/
@@ -82,7 +84,7 @@ Kitazaki-Hinata.github.io/
 │   └── remark-resource-images.mjs      # 转换 Markdown 插图和文档链接 URL
 ├── src/
 │   ├── content.config.ts               # Markdown 集合与字段校验
-│   ├── config/site.ts                  # 名称、背景、头像、导航、社交链接
+│   ├── config/site.ts                  # 名称、背景、头像、导航
 │   ├── generated/
 │   │   ├── .gitkeep                    # 提交到 Git，用于保留目录
 │   │   └── media.json                  # 构建时生成的媒体清单，已忽略
@@ -133,21 +135,37 @@ Kitazaki-Hinata.github.io/
 
 示例图片是真正可打开的 SVG 文件，可直接用浏览器预览，不是改了图片后缀的文本占位。它们仅用于说明文件关系，可以换成自己的 PNG、JPG 或 WebP；如果后缀或文件名改变，同时更新引用。
 
-## 3. 全站统一背景与主页
+## 3. 首页与内页背景、主页内容
 
-所有页面，包括股票与读书文章、skin、快乐的事、找我&投喂和 404，都通过 `BaseLayout.astro` 使用同一个背景；`ArticleLayout.astro` 复用该布局。
+所有页面通过 `BaseLayout.astro` 设置背景；首页传入 `home` 属性，使用首页背景，其余页面（包括栏目、文章、skin 详情和 404）使用内页背景。`ArticleLayout.astro` 复用该布局。
 
 背景原图放入 `resource/background/`。当前 `src/config/site.ts` 中的设置是：
 
 ```ts
-background: "background/main-bg.webp"
+background: "background/main-bg.webp",
+sideBackground: "background/side-bg.webp",
 ```
 
-此路径相对于 `resource/`，对应 `resource/background/main-bg.webp`。背景由 `resource/design/main-bg.png` 转换为 WebP，保持 2560 × 1440 原尺寸与透明通道，质量参数为 94；文件从约 8.86 MB 缩小到 1.43 MB。PNG 原图保留在设计目录。可直接替换 WebP；如果修改文件名，将站点配置同步更新。目录可以存多张备选图，全站只使用配置选中的一张。
+这两个路径相对于 `resource/`：`background` 指定首页图片，`sideBackground` 指定其他页面图片。当前首页背景由 `resource/background/main-bg.png` 转换为 WebP，保留原尺寸与透明效果，质量参数为 94；PNG 原图继续保留。`resource/design/` 只保存设计原稿，不会自动转换或同步到网页背景。
 
-布局使用固定全屏背景层、居中覆盖、带颜色的半透明导航与内容卡片、背景模糊、柔和阴影及图片失败时的纯色回退。详情页不单独设置背景。主页的名称、简介与按钮和导航品牌共享左侧基准；首屏下方留出空白，自我介绍滚动后进入视野。
+### 手动更换背景
 
-自我介绍编辑 `resource/about.md`；站点名称、搜索摘要、头像及社交链接编辑 `src/config/site.ts`。首页首屏的中英文欢迎文字编辑 `src/pages/index.astro`。头像路径同样相对于 `resource/`。
+1. 如果已经有 WebP，直接覆盖 `resource/background/main-bg.webp`（首页）或 `resource/background/side-bg.webp`（其他页面），无需修改配置。
+2. 如果新图是 PNG，可将它保存为 `resource/background/main-bg.png`，在仓库根目录运行以下命令，生成首页使用的 WebP。转换保留 PNG，不会修改设计原稿；将命令中的输入和输出文件名改为对应名称即可转换内页背景。
+
+   ```powershell
+   node --input-type=module -e "import sharp from 'sharp'; await sharp('resource/background/main-bg.png').webp({ quality: 94 }).toFile('resource/background/main-bg.webp');"
+   ```
+
+3. 如果想直接使用 PNG，或使用其他文件名，将图片放入 `resource/background/`，再同步修改 `src/config/site.ts` 中的 `background` 或 `sideBackground`。例如首页使用 PNG 时填 `"background/main-bg.png"`；文件名、后缀和大小写必须一致。
+4. 运行 `npm run dev`，打开终端显示的网址预览。已启动开发服务器时，覆盖背景或修改配置后会自动刷新；仅修改 PNG 原稿时，需要重新执行转换命令才能更新对应 WebP。
+5. 提交更新的背景图片和配置，推送到 `main`，等待 GitHub Actions 部署成功。`public/resource/` 是生成目录，无需手动修改或提交。
+
+目录可以保存备选图，页面只显示对应配置选中的图片；`resource/background/` 中的图片都会作为公开资源处理。
+
+布局使用固定全屏背景层、居中覆盖、带颜色的半透明导航与内容卡片、背景模糊、柔和阴影及图片失败时的纯色回退。详情页共享内页背景。主页的名称、简介与按钮和导航品牌共享左侧基准；首屏下方留出空白，自我介绍滚动后进入视野。
+
+自我介绍编辑 `resource/about.md`；站点名称、搜索摘要、头像及导航编辑 `src/config/site.ts`。首页首屏的中英文欢迎文字编辑 `src/pages/index.astro`。头像路径同样相对于 `resource/`。
 
 字体源文件在 `resource/fonts/`。网页使用 `resource/fonts/web/` 中的 WOFF2：首页大字号名称使用 `Torus Pro` Regular，完整转换自 `TorusPro-Regular.ttf`，CSS 字重为 `400`；首页其他文字及标题保留 `Alibaba Health`，拉丁字符子集约 7.5 KB，其余字符约 1.04 MB；`Microsoft YaHei Nav` 来自微软雅黑 Bold 的导航字符子集，约 12.5 KB。后两者的 CSS 字重均为 `700`；所有自定义字体使用 `font-display: swap`，保证字体加载时文字仍可见；正文使用系统字体以保持阅读舒适。
 
@@ -331,7 +349,7 @@ draft: false
 
 ### 快乐的事
 
-访问 `/happy/`，按时间浏览“一张图片配一段短文”的生活记录。同一件事也可以配多张图片，文字只显示一次；点击图片打开原图查看器，上一张／下一张只切换这一条记录的图片。栏目复用全站背景、缩略图和查看器。
+访问 `/happy/`，按时间浏览“一张图片配一段短文”的生活记录。同一件事也可以配多张图片，文字只显示一次；点击图片打开原图查看器，上一张／下一张只切换这一条记录的图片。栏目使用内页背景，并复用缩略图和查看器。
 
 每条记录使用 `resource/happy/` 下的一个独立文件夹。复制示例后替换图片与短文即可：
 
@@ -383,7 +401,7 @@ resource/happy/
 
 ### 找我&投喂
 
-页面固定展示“个人联系方式”和“赞助渠道”两张图片，点击可以打开原图查看器，支持放大、缩小和切换。所有页面继续使用相同背景。
+页面固定展示“个人联系方式”和“赞助渠道”两张图片，点击可以打开原图查看器，支持放大、缩小和切换。页面使用配置指定的内页背景。
 
 把图片放在 `resource/contact/`，通过同目录的 `config.json` 指定文件名。现有示例：
 
@@ -539,7 +557,7 @@ Windows PowerShell 如果限制 `npm.ps1`，可以把命令里的 `npm` 换成 `
 
 ## 10. 验证与下一步
 
-当前已接通统一背景与导航、主页自我介绍、绘画列表、skin 列表及详情、股票与读书文章列表和详情、快乐图文、找我&投喂图片、404、自动缩略图、原图查看器、分类筛选、资源监听和校验。
+当前已接通首页与内页背景、统一导航、主页自我介绍、绘画列表、skin 列表及详情、股票与读书文章列表和详情、快乐图文、找我&投喂图片、404、自动缩略图、原图查看器、分类筛选、资源监听和校验。
 
 本地验证命令：
 

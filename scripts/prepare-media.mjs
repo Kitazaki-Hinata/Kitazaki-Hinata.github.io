@@ -122,7 +122,7 @@ export async function prepareProject({ root = projectRoot, site } = {}) {
   happy.sort((a, b) => compare(b.date, a.date) || compare(a.id, b.id));
 
   for (const file of images) if (/^(background|images)\//.test(relative(file))) selected.add(file);
-  for (const value of [site.background, site.avatar]) {
+  for (const value of [site.background, site.sideBackground ?? site.background, site.avatar]) {
     if (!selected.has(byName.get(value))) throw new Error('Configured image is missing (check case): ' + value);
   }
   const contactRoot = path.join(sourceRoot, 'contact');

@@ -109,8 +109,39 @@ test('reading has its own sorted list, filters, nested details and draft exclusi
   expect((await request.get('/projects/example-blog/')).status()).toBe(404);
 });
 
-test('contact displays two images with original viewing and the shared background', async ({ page }) => {
+test('navigation uses the main WebP only at home and the side WebP on other pages', async ({ page, request }) => {
+  const { root } = JSON.parse(readFileSync('.cache/browser-fixture.json', 'utf8'));
+  const { assets } = JSON.parse(readFileSync(path.join(root, 'src/generated/media.json'), 'utf8'));
   await page.goto('/');
+  const mainUrl = new URL('/resource/' + assets['background/main-bg.webp'].src, page.url()).href;
+  const sideUrl = new URL('/resource/' + assets['background/side-bg.webp'].src, page.url()).href;
+  expect(mainUrl).not.toBe(sideUrl);
+  for (const url of [mainUrl, sideUrl]) {
+    expect(new URL(url).pathname).toMatch(/\.webp$/);
+    const response = await request.get(url);
+    expect(response.ok()).toBe(true);
+    expect(response.headers()['content-type']).toContain('image/webp');
+  }
+  const background = page.locator('.site-background');
+  await expect(background).toHaveCSS('background-image', `url("${mainUrl}")`);
+  await page.locator('nav a[href="/osu/"]').click();
+  await expect(background).toHaveCSS('background-image', `url("${sideUrl}")`);
+  await page.getByRole('link', { name: 'Browser fixture skin', exact: true }).click();
+  await expect(page).toHaveURL(/\/osu_skin\/browser-fixture\/$/);
+  await expect(background).toHaveCSS('background-image', `url("${sideUrl}")`);
+  await page.locator('nav a[href="/"]').click();
+  await expect(background).toHaveCSS('background-image', `url("${mainUrl}")`);
+  for (const route of ['/stock/', '/stock/browser-fixture/', '/drawing/', '/reading/', '/reading/browser-fixture/', '/reading/folder/2099-01-01-nested/', '/happy/', '/contact/']) {
+    await page.goto(route);
+    await expect(background).toHaveCSS('background-image', `url("${sideUrl}")`);
+  }
+  const missingPage = await page.goto('/browser-missing-page/');
+  expect(missingPage!.status()).toBe(404);
+  await expect(background).toHaveCSS('background-image', `url("${sideUrl}")`);
+});
+
+test('contact displays two images with original viewing and the shared inner-page background', async ({ page }) => {
+  await page.goto('/drawing/');
   const background = await page.locator('.site-background').getAttribute('style');
   await page.locator('nav').getByRole('link', { name: '找我&投喂' }).click();
   await expect(page).toHaveURL(/\/contact\/$/);
@@ -127,7 +158,7 @@ test('contact displays two images with original viewing and the shared backgroun
 });
 
 test('happy moments show grouped captions, dates and independent image viewers', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/drawing/');
   const background = await page.locator('.site-background').getAttribute('style');
   await page.locator('nav').getByRole('link', { name: '快乐的事' }).click();
   await expect(page).toHaveURL(/\/happy\/$/);

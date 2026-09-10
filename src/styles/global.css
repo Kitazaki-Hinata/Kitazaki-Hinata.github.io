@@ -57,6 +57,7 @@ nav a[aria-current]::after { opacity: .35; }
 
 main { min-height: 75svh; padding: 3.5rem 0 6rem; }
 .home-main { padding-top: 0; }
+.home-content { width: fit-content; max-width: 100%; }
 .hero { display: flex; flex-direction: column; align-items: flex-start; min-height: 70svh; justify-content: center; padding-block: 4rem; }
 .eyebrow { font-size: .8rem; font-weight: 700; letter-spacing: .16em; color: var(--accent); }
 .home-hero {
@@ -67,7 +68,7 @@ main { min-height: 75svh; padding: 3.5rem 0 6rem; }
   font-family: var(--display-font);
   font-weight: 700;
 }
-.home-hero .eyebrow { margin: 0; font-size: clamp(1rem, 1.28vw, 1.25rem); line-height: 1.5; letter-spacing: 0; color: var(--ink); }
+.home-hero .eyebrow { margin: 0; font-family: "Microsoft YaHei", "微软雅黑", "PingFang SC", sans-serif; font-size: clamp(1rem, 1.28vw, 1.25rem); line-height: 1.5; letter-spacing: 0; color: var(--ink); }
 .home-hero h1 { margin: clamp(2.5rem, 5.5svh, 4rem) 0 clamp(2.75rem, 6svh, 4.5rem); font-family: "Torus Pro", var(--display-font); font-weight: 400; font-size: clamp(3rem, 5.2vw, 6.25rem); line-height: 1.15; letter-spacing: 0; }
 .hero-description { font-size: clamp(1rem, 1.28vw, 1.25rem); max-width: 100%; margin: 0; color: var(--ink); line-height: 1.5; overflow-wrap: anywhere; }
 .hero-description span { display: block; }
@@ -101,7 +102,8 @@ main { min-height: 75svh; padding: 3.5rem 0 6rem; }
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
 }
-.about-section { display: grid; grid-template-columns: 120px 1fr; gap: 2.5rem; align-items: start; margin-top: clamp(4rem, 8svh, 7rem); }
+/* Let the hero text set the shared width; the about panel keeps the same left edge. */
+.about-section { contain: inline-size; display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 2.5rem; align-items: start; margin-top: clamp(4rem, 8svh, 7rem); }
 .avatar { border-radius: 50%; border: 3px solid rgba(255, 255, 255, .65); box-shadow: 0 6px 20px rgba(45, 76, 101, .15); }
 .prose { overflow-wrap: anywhere; }
 .prose > :first-child { margin-top: 0; }

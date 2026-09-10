@@ -6,6 +6,7 @@ import { resourceUrl, withBase } from '../lib/urls';
 import '../styles/global.css';
 interface Props { title?: string; description?: string; home?: boolean }
 const { title, description = siteConfig.description, home = false } = Astro.props;
+const background = home ? siteConfig.background : siteConfig.sideBackground;
 const pageTitle = title ? title + ' · ' + siteConfig.title : siteConfig.title;
 ---
 <!doctype html>
@@ -24,7 +25,7 @@ const pageTitle = title ? title + ' · ' + siteConfig.title : siteConfig.title;
   </head>
   <body>
     <a class="skip-link" href="#main">跳到正文</a>
-    <div class="site-background" style={{ backgroundImage: 'url("' + resourceUrl(siteConfig.background) + '")' }} aria-hidden="true"></div>
+    <div class="site-background" style={{ backgroundImage: 'url("' + resourceUrl(background) + '")' }} aria-hidden="true"></div>
     <Header />
     <main id="main" class:list={[{ 'home-main': home }]}><slot /></main>
     <Footer />

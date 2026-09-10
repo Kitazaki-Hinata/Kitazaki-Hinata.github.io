@@ -10,7 +10,7 @@ interface Props { skin: (typeof media.skins)[number] }
 const { skin } = Astro.props;
 ---
 <BaseLayout title={skin.title} description={skin.description}>
-  <a class="back-link" href={withBase('/osu/')}>← 返回 osu skin</a>
+  <a class="back-link" href={withBase('/osu/')}>← 返回 Skin设计</a>
   <header class="page-heading">
     <p class="eyebrow">SKIN PREVIEW</p><h1>{skin.title}</h1><p>{skin.description}</p>
     <div class="meta">{skin.author && <span>{skin.author}</span>}{skin.date && <time datetime={skin.date}>{skin.date}</time>}</div>
