@@ -7,6 +7,8 @@ import '../styles/global.css';
 interface Props { title?: string; description?: string; home?: boolean }
 const { title, description = siteConfig.description, home = false } = Astro.props;
 const background = home ? siteConfig.background : siteConfig.sideBackground;
+const backgroundUrl = resourceUrl(background);
+const nextBackgroundUrl = resourceUrl(home ? siteConfig.sideBackground : siteConfig.background);
 const pageTitle = title ? title + ' · ' + siteConfig.title : siteConfig.title;
 ---
 <!doctype html>
@@ -16,6 +18,13 @@ const pageTitle = title ? title + ' · ' + siteConfig.title : siteConfig.title;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="#cfe4f4" />
+    {home && <>
+      <link rel="preload" as="image" href={backgroundUrl} fetchpriority="high" data-home-background />
+      <script is:inline>
+        // Delay only the content; let the browser paint the background as soon as it can.
+        document.documentElement.classList.add('home-content-pending');
+      </script>
+    </>}
     <link rel="stylesheet" href={withBase('/resource/fonts.css')} />
     <link rel="preload" href={withBase('/resource/alibaba-health-85b-latin.woff2')} as="font" type="font/woff2" crossorigin />
     {home && <link rel="preload" href={withBase('/resource/torus-pro-regular.woff2')} as="font" type="font/woff2" crossorigin />}
@@ -25,12 +34,12 @@ const pageTitle = title ? title + ' · ' + siteConfig.title : siteConfig.title;
   </head>
   <body>
     <a class="skip-link" href="#main">跳到正文</a>
-    <div class="site-background" style={{ backgroundImage: 'url("' + resourceUrl(background) + '")' }} aria-hidden="true"></div>
+    <div class="site-background" style={{ backgroundImage: 'url("' + backgroundUrl + '")' }}
+      data-next-background={nextBackgroundUrl !== backgroundUrl ? nextBackgroundUrl : undefined} aria-hidden="true"></div>
     <Header />
     <main id="main" class:list={[{ 'home-main': home }]}><slot /></main>
     <Footer />
     <script is:inline>
-      // Run as the page is parsed so the entrance does not wait for a script download.
       (() => {
         const selector = [
           'main .hero > *',
@@ -44,9 +53,43 @@ const pageTitle = title ? title + ' · ' + siteConfig.title : siteConfig.title;
         const parts = Array.from(document.querySelectorAll(selector))
           // Cards containing other cards enter as a single unit.
           .filter((part) => !part.parentElement?.closest(selector));
-        parts.forEach((part, index) => {
+        const enter = () => parts.forEach((part, index) => {
           part.style.setProperty('--page-enter-delay', `${index * 60}ms`);
           part.classList.add('page-enter');
+        });
+        const preload = document.querySelector('link[data-home-background]');
+        let entered = Promise.resolve();
+        if (!preload) {
+          enter();
+        } else {
+          const background = new Image();
+          background.fetchPriority = 'high';
+          background.src = preload.href;
+          entered = background.decode()
+            // A failed background falls back to the page color instead of hiding content forever.
+            .catch(() => {})
+            .then(() => {
+              // Give the decoded background a paint before starting the content animation.
+              return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => {
+                enter();
+                document.documentElement.classList.remove('home-content-pending');
+                resolve();
+              })));
+            });
+        }
+
+        const pageLoaded = document.readyState === 'complete' ? Promise.resolve() : new Promise((resolve) => {
+          window.addEventListener('load', resolve, { once: true });
+        });
+        Promise.all([entered, pageLoaded]).then(() => document.fonts.ready).then(() => {
+          const nextUrl = document.querySelector('.site-background')?.dataset.nextBackground;
+          if (!nextUrl) return;
+          // Warm the other background in either direction only after this page is ready.
+          // The exact published URL lets normal image requests reuse the browser cache.
+          const nextBackground = new Image();
+          nextBackground.fetchPriority = 'low';
+          nextBackground.src = nextUrl;
+          return nextBackground.decode().catch(() => {});
         });
       })();
     </script>
