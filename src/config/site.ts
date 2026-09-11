@@ -4,7 +4,7 @@ export const siteConfig = {
   description: "绘画、osu skin、读书思考与日常记录。",
   background: "background/main-bg.webp",
   sideBackground: "background/side-bg.webp",
-  avatar: "images/avatar.svg",
+  avatar: "images/avatar.webp",
   navigation: [
     { label: "主页", href: "/" },
     { label: "skin设计", href: "/osu/" },

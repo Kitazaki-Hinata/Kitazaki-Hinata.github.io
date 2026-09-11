@@ -163,6 +163,32 @@ sideBackground: "background/side-bg.webp",
 
 目录可以保存备选图，页面只显示对应配置选中的图片；`resource/background/` 中的图片都会作为公开资源处理。
 
+### WebP 压缩与转换（复制即用）
+
+**在仓库根目录的 PowerShell 中执行。** 项目已包含 `sharp`；首次使用且尚未安装依赖时，先运行 `npm ci`（需要 Node.js 24）。下面的命令同时完成压缩与 WebP 转换，不需要先转成 JPG。
+
+**1. 一次压缩首页和内页背景，保留原尺寸与透明通道。** 从两张 PNG 原稿重新生成并覆盖网站当前使用的同名 WebP，PNG 原稿保留，无需修改背景配置。与上面的质量 94 命令相比，这里采用有损质量 80，优先减小下载体积：
+
+```powershell
+node --input-type=module -e "import sharp from 'sharp'; for (const name of ['main-bg', 'side-bg']) { const info = await sharp('resource/background/' + name + '.png').rotate().webp({ quality: 80, effort: 6 }).toFile('resource/background/' + name + '.webp'); console.log(name + ': ' + Math.round(info.size / 1024) + ' KiB'); }"
+```
+
+以当前图片在内存中试算：保留 **2560 × 1440**，首页背景约从 **1.40 MB → 356 KB**，内页背景约从 **1.43 MB → 375 KB**，分别减小约 75% 和 74%（此处 KB/MB 按十进制计算，命令输出为 KiB）。执行后检查渐变、线条和细节；希望保留更多细节可将 `quality: 80` 调高到 `85` 或 `90`。每次都从 PNG 原稿转换，避免反复压缩已生成的有损 WebP。
+
+如愿意降低背景分辨率，在 `.rotate()` 后、`.webp(...)` 前插入 `.resize({ width: 1920, withoutEnlargement: true })`，即可等比缩小且不放大小图；当前两张背景试算约为 93 KB 和 71 KB，大屏显示前应先预览清晰度。`effort: 6` 增加本地编码耗时，不会让访客执行转换。参数说明参见 [Sharp WebP 文档](https://sharp.pixelplumbing.com/api-output/#webp) 与 [缩放文档](https://sharp.pixelplumbing.com/api-resize/)。
+
+**2. 可选：将当前大头像转换成适合网页显示的 WebP。** 当前 `avatar.svg` 内嵌了位图，文件约 2.28 MB；页面显示约 120px，下面生成 240px 版本，照顾两倍像素密度屏幕，保留 SVG 原稿：
+
+```powershell
+node --input-type=module -e "import sharp from 'sharp'; await sharp('resource/images/avatar.svg').resize({ width: 240, withoutEnlargement: true }).webp({ quality: 85, effort: 6 }).toFile('resource/images/avatar.webp');"
+```
+
+当前头像试算约为 13 KB。**仅生成文件不会自动切换头像**；决定启用时，需要自己把 `src/config/site.ts` 的 `avatar` 改为 `"images/avatar.webp"`。转换其他静态 PNG/JPG 图片时，可替换命令的输入、输出路径，并按实际显示需求调整或移除 `.resize(...)`；输出目录需已存在，输入和输出路径必须不同。普通矢量 SVG 不必照搬头像的处理方式。
+
+**3. 转换后运行 `npm run dev` 预览，再提交图片及必要的引用更新并推送，等待部署。** 不要手动修改 `public/resource/`。若更改图片后缀，Markdown、JSON 或站点配置中的引用也要同步更新。绘画目录禁止同时保留同目录、同名的 PNG 和 WebP；如需替换绘画格式，应把原稿备份到扫描目录外，再让 WebP 接替原文件，同名说明 JSON 保留。
+
+**无需批量转换全站原图来解决首页加载问题。** 画廊、skin、快乐记录及联系页已经自动生成质量 80 的 WebP 缩略图并设置懒加载，打开查看器才请求对应原图。背景、首页头像和 Markdown 正文插图直接引用原文件，应优先检查这些实际请求的资源。构建时扫描、复制全站图片不等于浏览器下载全站图片；[懒加载](https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/Lazy_loading)也可能提前请求当前页面中靠近视口的图片。
+
 布局使用固定全屏背景层、居中覆盖、带颜色的半透明导航与内容卡片、背景模糊、柔和阴影及图片失败时的纯色回退。详情页共享内页背景。主页的名称、简介与按钮和导航品牌共享左侧基准；首屏下方留出空白，自我介绍滚动后进入视野。
 
 自我介绍编辑 `resource/about.md`；站点名称、搜索摘要、头像及导航编辑 `src/config/site.ts`。首页首屏的中英文欢迎文字编辑 `src/pages/index.astro`。头像路径同样相对于 `resource/`。
