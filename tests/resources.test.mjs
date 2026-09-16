@@ -151,6 +151,19 @@ test('happy posts group text and images, sort by date, preserve image order and 
   assert.equal(result.assets['happy/newer/images/unused.png'], undefined);
   assert.equal(result.assets['happy/draft/images/private.png'], undefined);
 });
+test('happy posts allow absent image folders, empty folders and explicit text-only posts', async (t) => {
+  const f = await fixture(t);
+  f.put('happy/no-folder/post.json', JSON.stringify({ text: 'A joy without photos.' }));
+  f.put('happy/empty-folder/post.json', JSON.stringify({ text: 'An empty photo folder.' }));
+  mkdirSync(path.join(f.root, 'resource/happy/empty-folder/images'));
+  f.put('happy/explicit-empty/post.json', JSON.stringify({ text: 'Only this text should appear.', images: [] }));
+  f.put('happy/explicit-empty/images/unused.png', f.png);
+  const result = await f.run();
+  assert.equal(result.happy.length, 3);
+  assert.ok(result.happy.every((post) => post.images.length === 0));
+  assert.equal(result.happy.find((post) => post.id === 'no-folder').text, 'A joy without photos.');
+  assert.equal(result.assets['happy/explicit-empty/images/unused.png'], undefined);
+});
 test('invalid happy posts retain previous output and cannot reference outside images', async (t) => {
   const f = await fixture(t);
   f.put('happy/moment/images/photo.png', f.png);
@@ -158,7 +171,12 @@ test('invalid happy posts retain previous output and cannot reference outside im
   await f.run();
   const before = f.manifest();
   for (const [data, message] of [
+    [{ images: [] }, /text must/],
     [{ text: ' ' }, /text must/],
+    [{ text: 'A joy', images: null }, /images must/],
+    [{ text: 'A joy', images: 'images/photo.png' }, /images must/],
+    [{ text: 'A joy', images: [42] }, /images must/],
+    [{ text: 'A joy', images: [' '] }, /images must/],
     [{ text: 'A joy', images: ['../../images/avatar.png'] }, /inside this post/],
     [{ text: 'A joy', images: ['images/missing.png'] }, /missing image/],
     [{ text: 'A joy', images: ['images/photo.png', 'images/./photo.png'] }, /duplicate images/],
@@ -167,12 +185,8 @@ test('invalid happy posts retain previous output and cannot reference outside im
     await assert.rejects(f.run(), message);
     assert.equal(f.manifest(), before);
   }
-  f.put('happy/moment/post.json', '{"text":"A joy"}');
-  rmSync(path.join(f.root, 'resource/happy/moment/images/photo.png'));
-  await assert.rejects(f.run(), /has no images/);
-  assert.equal(f.manifest(), before);
 });
-test('removing a happy post removes its assets and leaves an empty feed', async (t) => {
+test('removing the last happy photo retains its text, and removing the post leaves an empty feed', async (t) => {
   const f = await fixture(t);
   f.put('happy/moment/images/photo.png', await sharp(f.png).resize(117).toBuffer());
   f.put('happy/moment/post.json', '{"text":"A joy"}');
@@ -180,9 +194,14 @@ test('removing a happy post removes its assets and leaves an empty feed', async 
   const asset = before.happy[0].images[0];
   const folder = path.resolve(f.root, 'resource/happy/moment');
   assert.ok(folder.startsWith(path.resolve(f.root, 'resource/happy') + path.sep));
+  rmSync(path.join(folder, 'images/photo.png'));
+  const textOnly = await f.run();
+  assert.equal(textOnly.happy.length, 1);
+  assert.equal(textOnly.happy[0].text, 'A joy');
+  assert.deepEqual(textOnly.happy[0].images, []);
+  for (const name of [asset.src, ...asset.thumbnails.map((thumb) => thumb.src)]) assert.equal(existsSync(path.join(f.root, 'public/resource', name)), false);
   rmSync(folder, { recursive: true });
   assert.deepEqual((await f.run()).happy, []);
-  for (const name of [asset.src, ...asset.thumbnails.map((thumb) => thumb.src)]) assert.equal(existsSync(path.join(f.root, 'public/resource', name)), false);
 });
 test('resource URLs respect nesting, encoding and boundaries', () => {
   const root = path.join(projectRoot, 'resource');

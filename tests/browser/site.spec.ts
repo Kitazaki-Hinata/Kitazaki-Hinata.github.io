@@ -157,7 +157,7 @@ test('contact displays two images with original viewing and the shared inner-pag
   await expect(page.locator('[data-viewer-zoom]')).toHaveText('125%');
 });
 
-test('happy moments show grouped captions, dates and independent image viewers', async ({ page }) => {
+test('happy moments show text-only posts alongside captions, dates and independent image viewers', async ({ page }) => {
   await page.goto('/drawing/');
   const background = await page.locator('.site-background').getAttribute('style');
   await page.locator('nav').getByRole('link', { name: '快乐的事' }).click();
@@ -172,6 +172,15 @@ test('happy moments show grouped captions, dates and independent image viewers',
   await expect(multi.locator('.happy-text')).toHaveCSS('white-space', 'pre-wrap');
   await expect(multi.locator('[data-gallery-image]')).toHaveCount(2);
   await expect(single.locator('[data-gallery-image]')).toHaveCount(1);
+  const textOnly = page.locator('[data-happy-post="browser-text"]');
+  await expect(textOnly.locator('h2')).toHaveText('A text-only happy moment');
+  await expect(textOnly.locator('time')).toHaveAttribute('datetime', '2099-01-02');
+  await expect(textOnly.locator('.happy-text')).toHaveText('A joy that needs no photo.\nAnother happy line.');
+  await expect(page.locator('[data-happy-post="browser-explicit-text"] .happy-text')).toHaveText('Photos are optional.');
+  for (const id of ['browser-text', 'browser-explicit-text']) {
+    const post = page.locator('[data-happy-post="' + id + '"]');
+    await expect(post.locator('[data-gallery], img, dialog, .empty')).toHaveCount(0);
+  }
   await expect(page.locator('[data-happy-post="browser-draft"]')).toHaveCount(0);
   await multi.locator('[data-gallery-image]').first().click();
   await expect(multi.locator('[data-viewer-image]')).toBeVisible();
@@ -184,7 +193,7 @@ test('happy moments show grouped captions, dates and independent image viewers',
   await expect(single.getByRole('button', { name: '下一张', exact: true })).toBeDisabled();
 });
 
-test('happy resource updates, drafts, removal and an empty feed work without restarting', async ({ page }) => {
+test('happy photo additions and removals, text updates, drafts and an empty feed work without restarting', async ({ page }) => {
   test.setTimeout(60000);
   const { root } = JSON.parse(readFileSync('.cache/browser-fixture.json', 'utf8'));
   const happyRoot = path.resolve(root, 'resource/happy');
@@ -193,12 +202,18 @@ test('happy resource updates, drafts, removal and an empty feed work without res
   mkdirSync(path.join(folder, 'images'), { recursive: true });
   const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="cyan"/></svg>';
   const config = path.join(folder, 'post.json');
-  writeFileSync(path.join(folder, 'images/photo.svg'), svg);
   writeFileSync(config, JSON.stringify({ text: 'First happy caption', date: '2099-04-01' }));
   try {
     await page.goto('/happy/');
     const item = page.locator('[data-happy-post="browser-watch"]');
     await expect(item.locator('.happy-text')).toHaveText('First happy caption', { timeout: 20000 });
+    await expect(item.locator('[data-gallery], .empty')).toHaveCount(0);
+    writeFileSync(path.join(folder, 'images/photo.svg'), svg);
+    await expect(item.locator('[data-gallery-image]')).toHaveCount(1, { timeout: 20000 });
+    rmSync(path.join(folder, 'images/photo.svg'));
+    await expect(item.locator('[data-gallery]')).toHaveCount(0, { timeout: 20000 });
+    await expect(item.locator('.happy-text')).toHaveText('First happy caption');
+    await expect(item.locator('.empty')).toHaveCount(0);
     writeFileSync(config, JSON.stringify({ text: 'Updated happy caption', date: '2099-04-01' }));
     await expect(item.locator('.happy-text')).toHaveText('Updated happy caption', { timeout: 20000 });
     writeFileSync(config, '{"draft":true}');

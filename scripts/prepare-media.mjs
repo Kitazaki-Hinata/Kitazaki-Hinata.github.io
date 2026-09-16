@@ -95,7 +95,7 @@ export async function prepareProject({ root = projectRoot, site } = {}) {
   for (const folder of existsSync(happyRoot) ? readdirSync(happyRoot, { withFileTypes: true }) : []) {
     if (!folder.isDirectory()) {
       if (folder.name.endsWith('.json') || extensions.has(path.extname(folder.name).toLowerCase())) {
-        throw new Error('Place happy posts in <id>/post.json and <id>/images/: ' + folder.name);
+        throw new Error('Place happy posts in <id>/post.json with optional photos in <id>/images/: ' + folder.name);
       }
       continue;
     }
@@ -108,14 +108,13 @@ export async function prepareProject({ root = projectRoot, site } = {}) {
     const available = images.filter((file) => file.startsWith(directory + path.sep + 'images' + path.sep));
     let files = available;
     if (data.images !== undefined) {
-      if (!Array.isArray(data.images) || !data.images.length || data.images.some((value) => typeof value !== 'string' || !value.trim() || value.includes('\\'))) {
-        throw new Error(configFile + ': images must be a non-empty array of paths relative to this post');
+      if (!Array.isArray(data.images) || data.images.some((value) => typeof value !== 'string' || !value.trim() || value.includes('\\'))) {
+        throw new Error(configFile + ': images must be an array of paths relative to this post (use [] for no photos)');
       }
       files = data.images.map((value) => path.resolve(directory, value));
       if (files.some((file) => !available.includes(file))) throw new Error(configFile + ': missing image inside this post images/ directory (check case)');
       if (new Set(files).size !== files.length) throw new Error(configFile + ': duplicate images');
     }
-    if (!files.length) throw new Error(configFile + ': happy post has no images');
     happy.push({ id: folder.name, title: data.title || '', date: data.date || fileDate(folder.name), text: data.text,
       images: files.map((file, index) => image(file, { title: (data.title || '快乐的事') + ' · 图片 ' + (index + 1), alt: data.alt })) });
   }

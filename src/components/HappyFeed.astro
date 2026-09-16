@@ -9,7 +9,7 @@ const { posts } = Astro.props;
     <article class="panel" id={'happy-' + post.id} data-happy-post={post.id}>
       {post.title && <h2>{post.title}</h2>}
       {post.date && <p class="meta"><time datetime={post.date}>{post.date}</time></p>}
-      <Gallery images={post.images} showCaptions={false} />
+      {post.images.length > 0 && <Gallery images={post.images} showCaptions={false} />}
       <p class="happy-text">{post.text}</p>
     </article>
   ))}
@@ -19,4 +19,5 @@ const { posts } = Astro.props;
   article > h2 { margin-top: 0; }
   article > .meta { margin-top: 0; margin-bottom: 1.25rem; }
   .happy-text { white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: 0; line-height: 1.9; }
+  .happy-text:first-child { margin-top: 0; }
 </style>
