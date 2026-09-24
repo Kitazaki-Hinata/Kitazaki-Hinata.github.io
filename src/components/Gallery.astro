@@ -1,17 +1,20 @@
 ---
 import { resourceUrl } from '../lib/urls';
 import type { GalleryImage } from '../lib/media';
+import { getGalleryLayout } from '../lib/gallery-layout';
 import Thumbnail from './Thumbnail.astro';
 import ImageViewer from './ImageViewer.astro';
-interface Props { images: GalleryImage[]; activation?: 'single' | 'double'; showCaptions?: boolean; showOriginalLinks?: boolean }
-const { images, activation = 'single', showCaptions = true, showOriginalLinks = true } = Astro.props;
+interface Props { images: GalleryImage[]; activation?: 'single' | 'double'; showCaptions?: boolean; showOriginalLinks?: boolean; adaptToAspectRatio?: boolean }
+const { images, activation = 'single', showCaptions = true, showOriginalLinks = true, adaptToAspectRatio = false } = Astro.props;
+const layout = adaptToAspectRatio ? getGalleryLayout(images) : [];
 ---
 {images.length ? (
-  <section data-gallery data-activation={activation}>
+  <section data-gallery data-activation={activation} class:list={[{ 'gallery-responsive': adaptToAspectRatio }]}>
     {activation === 'double' && <p>电脑双击图片查看原图；触屏轻点打开，也可选中图片后按 Enter。</p>}
     <div class="gallery">
       {images.map((image, index) => (
-        <figure class="panel gallery-item">
+        <figure class:list={['panel gallery-item', { 'gallery-item-wide': adaptToAspectRatio && image.width >= image.height }]}
+          style={adaptToAspectRatio ? { '--gallery-row': layout[index].row, '--gallery-column': `${layout[index].column} / span ${layout[index].span}` } : undefined}>
           <a href={resourceUrl(image.src)} data-gallery-image data-index={index} data-title={image.title} data-alt={image.alt}
             target="_blank" rel="noopener noreferrer" aria-label={'查看原图：' + image.title}>
             <Thumbnail source={image} alt={image.alt} />
@@ -28,6 +31,21 @@ const { images, activation = 'single', showCaptions = true, showOriginalLinks = 
   </section>
 ) : <p class="panel empty">这里还没有图片，之后再来看看。</p>}
 <style>
+  .gallery-responsive { container: artwork-gallery / inline-size; }
+  .gallery-responsive .gallery { grid-template-columns: minmax(0, 1fr); }
+  .gallery-responsive .gallery-item { min-width: 0; overflow-wrap: anywhere; }
+  /* Keep phones in one column; larger screens use the gallery's available width. */
+  @media (min-width: 781px) {
+    /* Two or three 290px columns, including the existing 1.75rem gaps. */
+    @container artwork-gallery (min-width: 608px) {
+      .gallery-responsive .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .gallery-item-wide { grid-column: span 2; }
+    }
+    @container artwork-gallery (min-width: 926px) {
+      .gallery-responsive .gallery { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .gallery-responsive .gallery-item { grid-row: var(--gallery-row); grid-column: var(--gallery-column); }
+    }
+  }
   [data-gallery-image] { display: block; }
   [data-gallery-image]:focus-visible { outline-offset: -5px; }
   figcaption h2 { margin-top: 0; }
