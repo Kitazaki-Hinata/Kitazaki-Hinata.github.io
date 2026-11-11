@@ -144,11 +144,12 @@ export async function prepareProject({ root = projectRoot, site } = {}) {
   const entries = {};
   const parsedEntries = [];
   const routes = new Map();
-  for (const file of all.filter((file) => /^(about\.md$|(?:stock_text|reading_text)\/.*\.md$)/.test(relative(file)))) {
+  const articleCollections = { stock_text: 'stock', statistics: 'statistics', reading_text: 'reading' };
+  for (const file of all.filter((file) => /^(about\.md$|(?:stock_text|statistics|reading_text)\/.*\.md$)/.test(relative(file)))) {
     const name = relative(file);
     const parsed = parseMarkdown(readFileSync(file, 'utf8').replace(/^\uFEFF/, ''), file);
     const id = name === 'about.md' ? 'about' : contentId(name.slice(name.indexOf('/') + 1));
-    const route = name === 'about.md' ? '/' : '/' + (name.startsWith('stock_text/') ? 'stock' : 'reading') + '/' + id + '/';
+    const route = name === 'about.md' ? '/' : '/' + articleCollections[name.split('/')[0]] + '/' + id + '/';
     if (routes.has(route)) throw new Error('Route collision: ' + routes.get(route) + ' / ' + name + ' -> ' + route);
     routes.set(route, name);
     entries[name] = { id, route, draft: parsed.data.draft || false,

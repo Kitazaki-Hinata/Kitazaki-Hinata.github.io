@@ -91,7 +91,7 @@ test('categories persist in URLs and handle history and unknown categories', asy
 test('reading has its own sorted list, filters, nested details and draft exclusion', async ({ page, request }) => {
   await page.goto('/reading/');
   await expect(page.locator('nav').getByRole('link', { name: '读书与思考' })).toHaveAttribute('href', '/reading/');
-  await expect(page.locator('nav').getByRole('link', { name: '找我&投喂' })).toHaveAttribute('href', '/contact/');
+  await expect(page.locator('nav').getByRole('link', { name: '找她&投喂' })).toHaveAttribute('href', '/contact/');
   await expect(page.locator('nav a[href="/projects/"]')).toHaveCount(0);
   await expect(page.locator('article h2 a').first()).toHaveText('Browser reading note');
   const select = page.getByRole('combobox', { name: '分类' });
@@ -143,7 +143,7 @@ test('navigation uses the main WebP only at home and the side WebP on other page
 test('contact displays two images with original viewing and the shared inner-page background', async ({ page }) => {
   await page.goto('/drawing/');
   const background = await page.locator('.site-background').getAttribute('style');
-  await page.locator('nav').getByRole('link', { name: '找我&投喂' }).click();
+  await page.locator('nav').getByRole('link', { name: '找她&投喂' }).click();
   await expect(page).toHaveURL(/\/contact\/$/);
   await expect(page.locator('.site-background')).toHaveAttribute('style', background!);
   const pictures = page.locator('[data-gallery-image]');

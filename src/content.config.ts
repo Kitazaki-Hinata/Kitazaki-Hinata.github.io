@@ -23,6 +23,10 @@ export const collections = {
     loader: resourceLoader('stock', { pattern: '**/*.md', base: './resource/stock_text' }),
     schema: common.extend({ category: z.string().trim().min(1).default('碎碎念') }),
   }),
+  statistics: defineCollection({
+    loader: resourceLoader('statistics', { pattern: '**/*.md', base: './resource/statistics' }),
+    schema: common.extend({ category: z.string().trim().min(1).default('统计研究') }),
+  }),
   reading: defineCollection({
     loader: resourceLoader('reading', { pattern: '**/*.md', base: './resource/reading_text' }),
     schema: common.extend({ category: z.string().trim().min(1).default('读书笔记') }),

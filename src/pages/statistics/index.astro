@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleList from '../../components/ArticleList.astro';
+import { statisticsEntries } from '../../lib/content';
+const entries = await statisticsEntries();
+---
+<BaseLayout title="相信数学">
+  <header class="page-heading"><p class="eyebrow">STATISTICS & RESEARCH</p><h1>相信数学</h1><p>曾经不喜欢数学的她，也在某一天被数学的魅力折服</p></header>
+  <ArticleList entries={entries} compact />
+</BaseLayout>

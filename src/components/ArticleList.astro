@@ -2,7 +2,7 @@
 import type { CollectionEntry } from 'astro:content';
 import { entryDate, entrySummary, entryTitle } from '../lib/content';
 import { withBase } from '../lib/urls';
-interface Props { entries: CollectionEntry<'stock' | 'reading'>[]; compact?: boolean }
+interface Props { entries: CollectionEntry<'stock' | 'statistics' | 'reading'>[]; compact?: boolean }
 const { entries, compact = false } = Astro.props;
 const categories = [...new Set(entries.map((entry) => entry.data.category))].sort();
 ---

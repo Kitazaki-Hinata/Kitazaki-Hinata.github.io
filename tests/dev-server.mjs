@@ -27,6 +27,10 @@ put('stock_text/browser-fixture.md', '---\ncategory: "Browser fixture"\n---\n# B
 put('reading_text/browser-fixture.md', '---\ndate: "2099-02-02"\ncategory: "Browser reading"\n---\n# Browser reading note\n\n![Reading fixture](../images/browser-fixture.svg)\n\n[Stock note](../stock_text/browser-fixture.md)');
 put('reading_text/folder/2099-01-01-nested.md', '# Nested reading note');
 put('reading_text/browser-draft.md', '---\ndraft: true\n---\n# Unpublished reading');
+put('images/statistics/browser-fixture.svg', svg('teal'));
+put('statistics/browser-fixture.md', '---\ndate: "2099-03-02"\ncategory: "Browser statistics"\n---\n# Browser statistics note\n\nA statistics study with a summary that wraps naturally on smaller screens while keeping the title and date readable.\n\n![Statistics fixture](../images/statistics/browser-fixture.svg)\n\n[Stock note](../stock_text/browser-fixture.md)');
+put('statistics/folder/2099-01-01-nested.md', '# Nested statistics note with a long title to check wrapping on small screens\n\nA separate study with several sentences in the summary. The content should remain readable at narrow viewport widths.');
+put('statistics/browser-draft.md', '---\ndraft: true\n---\n# Unpublished statistics');
 put('happy/browser-multi/post.json', JSON.stringify({ title: 'Browser happy moment', date: '2099-03-01', text: 'A happy moment.\n<strong>Plain text</strong>' }));
 put('happy/browser-multi/images/01.svg', svg('orange'));
 put('happy/browser-multi/images/02.svg', svg('pink'));

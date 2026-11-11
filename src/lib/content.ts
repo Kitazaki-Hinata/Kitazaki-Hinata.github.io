@@ -6,9 +6,10 @@ const info = (entry: Entry) => Object.values(media.entries).find((item) =>
 export const entryTitle = (entry: Entry): string => entry.data.title || info(entry)?.title || entry.id;
 export const entryDate = (entry: Entry): string => entry.data.date || info(entry)?.date || '';
 export const entrySummary = (entry: Entry): string => entry.data.description ?? info(entry)?.summary ?? '';
-async function articleEntries<C extends 'stock' | 'reading'>(collection: C) {
+async function articleEntries<C extends 'stock' | 'statistics' | 'reading'>(collection: C) {
   return (await getCollection(collection, ({ data }) => !data.draft)).sort((a, b) =>
     entryDate(b).localeCompare(entryDate(a)) || a.id.localeCompare(b.id));
 }
 export const stockEntries = () => articleEntries('stock');
+export const statisticsEntries = () => articleEntries('statistics');
 export const readingEntries = () => articleEntries('reading');

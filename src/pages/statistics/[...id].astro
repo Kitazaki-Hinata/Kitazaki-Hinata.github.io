@@ -1,0 +1,14 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { statisticsEntries, entryTitle, entryDate, entrySummary } from '../../lib/content';
+export async function getStaticPaths() {
+  return (await statisticsEntries()).map((entry) => ({ params: { id: entry.id }, props: { entry } }));
+}
+interface Props { entry: CollectionEntry<'statistics'> }
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+<ArticleLayout title={entryTitle(entry)} description={entrySummary(entry)} date={entryDate(entry)} backHref="/statistics/" backLabel="返回相信数学">
+  <Content />
+</ArticleLayout>

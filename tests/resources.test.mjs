@@ -117,6 +117,32 @@ test('reading entries support nested routes, metadata fallbacks, drafts and rout
   f.put('reading_text/2026/a-note.md', '# Duplicate');
   await assert.rejects(f.run(), /Route collision/);
 });
+test('statistics entries support nested routes, images, cross-collection links and draft validation', async (t) => {
+  const f = await fixture(t);
+  f.put('images/statistics/distribution.png', f.png);
+  f.put('statistics/folder/2026-11-11-study.md', '# A statistics study\n\nA sample distribution.\n\n![Distribution](../../images/statistics/distribution.png)\n\n[Stock note](../../stock_text/study.md)');
+  f.put('stock_text/study.md', '# A stock note\n\n[Statistics study](../statistics/folder/2026-11-11-study.md)');
+  f.put('statistics/draft.md', '---\ndraft: true\n---\n# Draft\n\n![Unpublished](../images/statistics/missing.png)');
+  const result = await f.run();
+  const entry = result.entries['statistics/folder/2026-11-11-study.md'];
+  assert.equal(entry.route, '/statistics/folder/2026-11-11-study/');
+  assert.equal(entry.title, 'A statistics study');
+  assert.equal(entry.date, '2026-11-11');
+  assert.match(entry.summary, /^A sample distribution\./);
+  assert.equal(result.entries['stock_text/study.md'].route, '/stock/study/');
+  assert.equal(result.entries['statistics/draft.md'].draft, true);
+  const image = result.assets['images/statistics/distribution.png'];
+  assert.deepEqual(readFileSync(path.join(f.root, 'public/resource', image.src)), f.png);
+  f.put('statistics/link.md', '[Draft](draft.md)');
+  await assert.rejects(f.run(), /draft Markdown target/);
+  f.put('statistics/link.md', '![Missing](../images/statistics/missing.png)');
+  await assert.rejects(f.run(), /missing published image/);
+  f.put('statistics/link.md', '# Link');
+  f.put('statistics/a b.md', '# A');
+  f.put('statistics/a-b.md', '# B');
+  await assert.rejects(f.run(), /Route collision/);
+});
+
 test('contact publishes exactly the selected images and rejects missing or outside references', async (t) => {
   const f = await fixture(t);
   f.put('contact/unused.png', await sharp(f.png).resize(200).toBuffer());

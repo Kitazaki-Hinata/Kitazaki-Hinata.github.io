@@ -9,6 +9,7 @@ export const siteConfig = {
     { label: "主页", href: "/" },
     { label: "skin设计", href: "/osu/" },
     { label: "炒股碎碎念", href: "/stock/" },
+    { label: "相信数学", href: "/statistics/" },
     { label: "她不一样", href: "/drawing/" },
     { label: "读书与思考", href: "/reading/" },
     { label: "快乐的事", href: "/happy/" },

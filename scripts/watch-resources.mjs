@@ -21,7 +21,7 @@ export default function watchResources() {
               if (closed) return;
               try {
                 await prepareProject();
-                await refreshContent?.({ loaders: ['resource-about', 'resource-stock', 'resource-reading'] });
+                await refreshContent?.({ loaders: ['resource-about', 'resource-stock', 'resource-statistics', 'resource-reading'] });
                 server.ws.send({ type: 'full-reload' });
                 logger.info('Resources updated.');
               } catch (error) {
