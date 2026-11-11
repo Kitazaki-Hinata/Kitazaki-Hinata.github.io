@@ -2,8 +2,8 @@
 import type { CollectionEntry } from 'astro:content';
 import { entryDate, entrySummary, entryTitle } from '../lib/content';
 import { withBase } from '../lib/urls';
-interface Props { entries: CollectionEntry<'stock' | 'reading'>[] }
-const { entries } = Astro.props;
+interface Props { entries: CollectionEntry<'stock' | 'reading'>[]; compact?: boolean }
+const { entries, compact = false } = Astro.props;
 const categories = [...new Set(entries.map((entry) => entry.data.category))].sort();
 ---
 <section data-article-filter>
@@ -11,7 +11,7 @@ const categories = [...new Set(entries.map((entry) => entry.data.category))].sor
     <label>分类 <select aria-label="分类"><option value="">全部</option>{categories.map((category) => <option value={category}>{category}</option>)}</select></label>
     <p data-filter-status role="status"></p>
   </div>
-<div class="article-list">
+<div class:list={['article-list', { 'article-list--compact': compact }]}>
   {entries.map((entry) => (
     <article class="panel" data-category={entry.data.category}>
       <div class="meta"><span>{entry.data.category}</span><span>{entryDate(entry) || '未注明日期'}</span></div>
@@ -56,4 +56,8 @@ const categories = [...new Set(entries.map((entry) => entry.data.category))].sor
   article h2 a { text-decoration: none; }
   article h2 a:hover { text-decoration: underline; }
   article p { margin-bottom: 0; }
+  .article-list--compact { gap: 1rem; }
+  .article-list--compact article { padding-block: 1rem; }
+  .article-list--compact article h2 { margin-block: .5rem; }
+  .article-list--compact article p { margin-block: 0; }
 </style>
