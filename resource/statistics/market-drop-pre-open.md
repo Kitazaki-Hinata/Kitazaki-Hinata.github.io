@@ -2,7 +2,7 @@
 title: "NAS100盘前暴跌后开盘的表现"
 date: "2026-11-25"
 category: "有效规律"
-description: ""
+description: "只要低开，大概率都会有反弹，但仅限于反弹。"
 tags: ["统计"]
 draft: false
 ---
